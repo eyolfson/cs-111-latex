@@ -1,0 +1,96 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{ccicons}
+\usepackage{fontspec}
+\usepackage{import}
+\usepackage{listings}
+\usepackage{tikz}
+
+\subimport{../}{colors.tex}
+
+\usetikzlibrary{
+  arrows,
+  backgrounds,
+  calc,
+  decorations.pathreplacing,
+  fit,
+  matrix,
+  positioning,
+  tikzmark,
+}
+\usetikzmarklibrary{listings}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=uclablue,
+}
+
+\setbeamercolor{frametitle}{fg=primarycolor}
+\setbeamercolor{structure}{fg=primarycolor}
+
+\setbeamersize{text margin left=26.6mm}
+\addtolength{\headsep}{2mm}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+\setbeamertemplate{itemize items}[circle]
+
+\setbeamertemplate{footline}{
+  \begin{tikzpicture}[remember picture,
+                      overlay,
+                      shift={(current page.south west)}]
+    \node [black!50, inner sep=2mm, anchor=south east]
+          at (current page.south east) {\footnotesize \insertframenumber};
+  \end{tikzpicture}
+}
+
+\setsansfont{Overpass}[Scale=MatchLowercase]
+\setmonofont{Overpass Mono}[Scale=MatchLowercase]
+
+\makeatletter
+\newcommand\version[1]{\renewcommand\@version{#1}}
+\newcommand\@version{}
+\def\insertversion{\@version}
+
+\newcommand\lecturenumber[1]{\renewcommand\@lecturenumber{#1}}
+\newcommand\@lecturenumber{}
+\def\insertlecturenumber{\@lecturenumber}
+\makeatother
+
+\setbeamertemplate{title page}
+{
+  \begin{tikzpicture}[remember picture,
+                      overlay,
+                      shift={(current page.south west)},
+                      background rectangle/.style={fill=uclablue},
+                      show background rectangle]
+    \node [anchor=west, align=left, inner sep=0, text=white]
+          (lecturenumber) at (\paperwidth / 6, \paperheight * 3 / 4)
+          {\Large Lecture \insertlecturenumber};
+    \node [inner sep=0, align=left, text=white, node distance=0,
+           above left=of lecturenumber, anchor=south west, yshift=2mm]
+          {\Large CS 111: Operating System Principles};
+    \node (title) [inner sep=0, anchor=west, align=right, text=white]
+          at (\paperwidth / 6, \paperheight / 2)
+          {{\bfseries \Huge \inserttitle{}}};
+    \node [inner sep=0, align=right, text=white, node distance=0,
+           below right=of title, anchor=north east, yshift=-1mm]
+          {{\footnotesize \ttfamily \insertversion}};
+    \node [inner sep=0, text=white, align=left, anchor=west]
+          (author) at (\paperwidth / 6, \paperheight / 4)
+          {\insertauthor};
+    \node [text=white, inner sep=0, align=left, node distance=0,
+           below left=of author, anchor=north west, yshift=-2mm]
+          {\insertdate};
+    \node [align=right, anchor=south east, inner sep=2mm, text=white]
+          (license) at (\paperwidth, 0)
+          {\footnotesize This  work is licensed under a
+           \href{http://creativecommons.org/licenses/by-sa/4.0/}
+                {\color{uclagold} Creative Commons Attribution-ShareAlike 4.0
+                 International License}};
+    \node [text=white, inner sep=0, align=right, node distance=0,
+           above right=of license, anchor=south east, xshift=-2mm]
+          {\Large \ccbysa};
+  \end{tikzpicture}
+}

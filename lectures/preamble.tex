@@ -10,6 +10,7 @@
 
 \usetikzlibrary{
   arrows,
+  arrows.meta,
   backgrounds,
   calc,
   decorations.pathreplacing,
@@ -27,6 +28,7 @@
 
 \setbeamercolor{frametitle}{fg=primarycolor}
 \setbeamercolor{structure}{fg=primarycolor}
+\setbeamercolor{itemize item}{fg=black}
 
 \setbeamersize{text margin left=26.6mm}
 \addtolength{\headsep}{2mm}
@@ -34,6 +36,7 @@
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{headline}{}
 \setbeamertemplate{footline}{}
+\setbeamertemplate{itemize item}{\color{black}}
 \setbeamertemplate{itemize items}[circle]
 
 \setbeamertemplate{footline}{
@@ -93,4 +96,13 @@
            above right=of license, anchor=south east, xshift=-2mm]
           {\Large \ccbysa};
   \end{tikzpicture}
+}
+
+\tikzset{
+  >=Straight Barb[],
+  shorten >=1pt,
+}
+
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
 }

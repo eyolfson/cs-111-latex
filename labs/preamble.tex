@@ -1,0 +1,59 @@
+\documentclass{article}
+
+\usepackage{enumitem}
+\usepackage{fontspec}
+\usepackage[letterpaper,margin=72pt]{geometry}
+\usepackage{hyperref}
+\usepackage{import}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\subimport{../}{colors.tex}
+
+\setsansfont{Overpass}[Scale=MatchLowercase]
+\setmonofont{Overpass Mono}[Scale=MatchLowercase]
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=uclablue,
+}
+
+\setlist{nosep}
+
+\makeatletter
+\newcommand\version[1]{\renewcommand\@version{#1}}
+\newcommand\@version{}
+
+\newcommand\labnumber[1]{\renewcommand\@labnumber{#1}}
+\newcommand\@labnumber{}
+
+\newcommand\duedate[1]{\renewcommand\@duedate{#1}}
+\newcommand\@duedate{}
+
+\renewcommand\maketitle{%
+  \noindent
+  {\Large \color{uclablue} CS 111: Operating System Principles}
+
+  \noindent
+  {\Large \color{uclablue} Lab \@labnumber}\\[-0.75em]
+
+  \noindent
+  {\Huge \bfseries \color{uclablue} \@title}
+  {\ttfamily \footnotesize \color{uclablue} \@version}\\[-0.75em]
+
+  \noindent
+  {\@author}
+
+  \noindent
+  {\@date}
+
+  \noindent
+  {Due: \@duedate}\\[1em]
+}
+\makeatother
+
+\lstset{
+  basicstyle=\ttfamily,
+}

@@ -122,8 +122,10 @@ cat /proc/count
 \end{lstlisting}
 
 \noindent
-The final command should report a single integer representing the number of
+The last command should report a single integer representing the number of
 processes (or tasks) running on the machine.
+Your final task is to fill in your documentation in the \lstinline|README.md|
+for \lstinline|lab-00|.
 
 \paragraph{Tips.}
 
@@ -161,7 +163,7 @@ You'll have to use the following commands for this lab:
 
 Build your module with \lstinline|make|
 
-Insert your module into the kerenl with \lstinline|sudo insmod proc_count.ko|
+Insert your module into the kernel with \lstinline|sudo insmod proc_count.ko|
 
 Read any information messages printed in the kernel with
 \lstinline|sudo dmesg -l info|
@@ -169,5 +171,20 @@ Read any information messages printed in the kernel with
 Remove your module from the kernel (so you can insert a new one) with
 \lstinline|sudo rmmod proc_count|
 
+\paragraph{Grading.}
+
+The breakdown is as follows:
+
+75\% \hspace{0.5em} code implementation in \lstinline|proc_count.c|
+
+25\% \hspace{0.5em} documentation in \lstinline|README.md|
+
+\paragraph{Submission.}
+
+Simply push your code using \lstinline|git push origin main| (or simply
+\lstinline|git push|).
+For late days will we look at the timestamp on our server.
+We will never use your commit times as proof of submission, only when you
+push your code to the course Git server.
 
 \end{document}

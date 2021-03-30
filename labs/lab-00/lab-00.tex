@@ -2,7 +2,7 @@
 
 \labnumber{0}
 \title{A Kernel Seedling}
-\version{1.0.0}
+\version{1.0.2}
 \author{Jon Eyolfson}
 \date{March 29, 2021}
 \duedate{April 9, 2021}
@@ -22,8 +22,8 @@ to expose internal kernel information.
 \paragraph{Virtual machine setup.}
 
 After the setup you'll have a fully functioning Linux virtual machine.
-You'll also have a shared folder accessible on both the host and guest operating
-system.
+You'll also want to have a shared folder accessible on both the host and guest
+operating system to share files.
 You're free to edit your files with whatever you're comfortable with in
 whichever operating system you wish.
 You should only run your code on the virtual machine though.
@@ -92,15 +92,17 @@ For any of the commands, run them in the terminal.
       \item Press submit
     \end{enumerate}
   
-  \item Run: \lstinline|cd /media/sf_Shared|
+  \item Run: \lstinline|cd ~|
   \item Run: \lstinline|git clone git@laforge.cs.ucla.edu:spring21/username/cs111|
+
+        (replace username with your username)
   \item Run: \lstinline|cd cs111|
   \item Run: \lstinline|git remote add upstream git@laforge.cs.ucla.edu:spring21/jon/cs111|
 \end{enumerate}
 
 \paragraph{Lab Setup.}
-Ensure you're in the \lstinline|/media/sf_Shared/cs111| directory. Make sure you
-have the latest skeleton code from us by running:
+Ensure you're in the home (\lstinline|cd ~|) directory.
+Make sure you have the latest skeleton code from us by running:
 \lstinline|git pull upstream main|.
 You can finally run: \lstinline|cd lab-00| to begin the lab.
 

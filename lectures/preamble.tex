@@ -11,12 +11,14 @@
 \usetikzlibrary{
   arrows,
   arrows.meta,
+  automata,
   backgrounds,
   calc,
   decorations.pathreplacing,
   fit,
   matrix,
   positioning,
+  shapes,
   tikzmark,
 }
 \usetikzmarklibrary{listings}
@@ -28,6 +30,7 @@
 
 \setbeamercolor{frametitle}{fg=primarycolor}
 \setbeamercolor{structure}{fg=primarycolor}
+\setbeamercolor{enumerate item}{fg=black}
 \setbeamercolor{itemize item}{fg=black}
 \setbeamercolor{itemize subitem}{fg=black}
 
@@ -102,6 +105,7 @@
 \tikzset{
   >=Straight Barb[],
   shorten >=1pt,
+  initial text=,
 }
 
 \lstset{

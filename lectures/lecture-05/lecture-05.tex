@@ -1,0 +1,244 @@
+\input{../preamble.tex}
+
+\lecturenumber{5}
+\title{Process API}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{April 8, 2021}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Linux Terminology Is Slightly Different}
+
+    You can look at a process' state by reading \texttt{/proc/<pid>/state}
+
+    \hspace{2em} Replace \texttt{<pid>} with the process ID
+
+    \vspace{2em}
+
+    R: Running and runnable [Running and Waiting]
+
+    S: Interruptible sleep [Blocked]
+
+    D: Uninterruptible sleep [Blocked]
+
+    T: Stopped
+
+    Z: Zombie
+
+    \vspace{2em}
+
+    The kernel lets you explicitly stop a process to prevent it from running
+
+    \hspace{2em} You or another process must explicitly continue it
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{On POSIX Systems, You Can Find Documentation Using \texttt{man}}
+
+    We'll be using the following APIs:
+    \begin{itemize}
+      \item \texttt{execve}
+      \item \texttt{fork}
+      \item \texttt{wait}
+    \end{itemize}
+
+    \vspace{2em}
+
+    You can use \texttt{man <function>} to look up documentation,
+
+    or \texttt{man <number> <function>}
+
+    \hspace{2em} 2: System calls
+
+    \hspace{2em} 3: Library calls
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{\texttt{execve} Loads Another Program, and Replaces Process with A New One}
+
+    \texttt{execve} has the following API:
+    \begin{itemize}
+      \item \texttt{pathname}: Full path of the program to load
+      \item \texttt{argv}: Array of strings (array of characters), terminated by a null pointer
+
+            \hspace{2em} Represents arguments to the process
+      \item \texttt{envp}: Same as \texttt{argv}
+
+            \hspace{2em} Represents the environment of the process
+      \item Returns an error on failure, does not return if successful
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{\texttt{execve-example.c} Turns the Process into \texttt{ls}}
+
+    \begin{lstlisting}
+int main(int argc, char *argv[]) {
+  printf("I'm going to become another process\n");
+  char *exec_argv[] = {"ls", NULL};
+  char *exec_envp[] = {NULL};
+  int exec_return = execve("/usr/bin/ls", exec_argv, exec_envp);
+  if (exec_return == -1) {
+    exec_return = errno;
+    perror("execve failed");
+    return exec_return;
+  }
+  printf("If execve worked, this will never print\n");
+  return 0;
+}
+    \end{lstlisting}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{\texttt{fork} Creates a New Process, A Copy of the Current One}
+
+    \texttt{fork} as the following API:
+    \begin{itemize}
+      \item Returns the process ID of the newly created child process
+
+            \hspace{2em} -1: on failure
+
+            \hspace{2em} 0: in the child process
+
+            \hspace{2em} >0: in the parent process
+    \end{itemize}
+
+    \vspace{2em}
+
+    There are now 2 processes running
+
+    \hspace{2em} Note: they can access the same variables, but they're separate
+
+    \hspace{4em} Operating system does ``copy on write'' to maximize sharing
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{\texttt{fork-example.c} Has One Process Execute Each Branch}
+
+    \begin{lstlisting}
+int main(int argc, char *argv[]) {
+  pid_t pid = fork();
+  if (pid == -1) {
+    int err = errno;
+    perror("fork failed");
+    return err;
+  }
+  if (pid == 0) {
+    printf("Child returned pid: %d\n", pid);
+    printf("Child pid: %d\n", getpid());
+    printf("Child parent pid: %d\n", getppid());
+  }
+  else {
+    printf("Parent returned pid: %d\n", pid);
+    printf("Parent pid: %d\n", getpid());
+    printf("Parent parent pid: %d\n", getppid());
+  }
+  return 0;
+}
+    \end{lstlisting}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{\texttt{orphan-example.c} The Parent Exits Before the Child, \texttt{init} Cleans Up}
+
+    \begin{lstlisting}
+int main(int argc, char *argv[]) {
+  pid_t pid = fork();
+  if (pid == -1) {
+    int err = errno;
+    perror("fork failed");
+    return err;
+  }
+  if (pid == 0) {
+    printf("Child parent pid: %d\n", getppid());
+    sleep(2);
+    printf("Child parent pid (after sleep): %d\n", getppid());
+  }
+  else {
+    sleep(1);
+  }
+  return 0;
+}
+
+    \end{lstlisting}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{\texttt{zombie-example.c} The Parent Monitors the Child To Check Its State}
+
+    \begin{lstlisting}
+  pid_t pid = fork();
+  // Error checking
+  if (pid == 0) {
+    sleep(2);
+  }
+  else {
+    // Parent process
+    int ret;
+    sleep(1);
+    printf("Child process state: ");
+    ret = print_state(pid);
+    if (ret < 0) { return errno; }
+    sleep(2);
+    printf("Child process state: ");
+    ret = print_state(pid);
+    if (ret < 0) { return errno; }
+  }
+    \end{lstlisting}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{You Need to Call \texttt{wait} on Child Processes}
+
+    \texttt{wait} as the following API:
+    \begin{itemize}
+      \item \texttt{status}: Address to store the wait status of the process
+      \item Returns the process ID of child process
+
+            \hspace{2em} -1: on failure
+
+            \hspace{2em} 0: for no blocking calls with no child changes
+
+            \hspace{2em} >0: the child with a change
+    \end{itemize}
+
+    \vspace{2em}
+
+    The wait status contains a bunch of information, including the exit code
+
+    \hspace{2em} Use \texttt{man wait} to find all the macros to query wait status
+
+    \hspace{4em} You can use \texttt{waitpid} to wait on a specific child process
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{\texttt{wait-example.c} Blocks Until The Child Process Exists, and Cleans Up}
+
+    \begin{lstlisting}
+int main(int argc, char *argv[]) {
+  pid_t pid = fork();
+  if (pid == -1) {
+    return errno;
+  }
+  if (pid == 0) {
+    sleep(2);
+  }
+  else {
+    printf("Calling wait\n");
+    int wstatus;
+    pid_t wait_pid = wait(&wstatus);
+    if (WIFEXITED(wstatus)) {
+      printf("Wait returned for an exited process! pid: %d, status: %d\n",
+             wait_pid, WEXITSTATUS(wstatus));
+    }
+  }
+  return 0;
+}
+    \end{lstlisting}
+  \end{frame}
+\end{document}

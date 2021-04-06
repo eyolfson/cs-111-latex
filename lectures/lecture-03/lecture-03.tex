@@ -2,7 +2,7 @@
 
 \lecturenumber{3}
 \title{Libraries}
-\version{1.0.1}
+\version{1.1.0}
 \author{Jon Eyolfson}
 \date{April 1, 2021}
 
@@ -520,4 +520,83 @@ Call to free(0x55c12aa40260)
       \item Standard file descriptor conventions for UNIX
     \end{itemize}
   \end{frame}
+
+  \begin{frame}
+    \frametitle{Static Libraries Are Included At Link Time}
+    \begin{tikzpicture}[shorten >=3pt]
+      \node[draw, align=left] (foo-obj)
+           {\texttt{foo.o}};
+      \node[draw, align=left, below=of foo-obj, yshift=1em] (bar-obj)
+           {\texttt{bar.o}};
+      \node[draw, align=left, below=of bar-obj, yshift=1em] (baz-obj)
+           {\texttt{baz.o}};
+
+      \node[draw, align=left, right=of foo-obj, xshift=6em] (static)
+           {\texttt{lib.a}};
+
+      \draw[->] (foo-obj) -- node [above] {\small Archive} (static);
+      \draw[->] (bar-obj) -- (static);
+      \draw[->] (baz-obj) -- (static);
+    \end{tikzpicture}
+
+    \begin{flushright}
+    \begin{tikzpicture}[>=stealth', shorten >=2pt]
+
+      \node[draw, align=left] (main-obj)
+           {\texttt{main.o}};
+      \node[draw, align=left, below=of main-obj, yshift=1em] (util-obj)
+           {\texttt{util.o}};
+      \node[draw, align=left, below=of util-obj, yshift=1em] (static)
+           {\texttt{lib.a}};
+
+      \node[draw, align=left, right=of main-obj, xshift=6em] (exec)
+           {\texttt{executable}};
+
+      \draw[->] (main-obj) -- node [above] {\small Linkage} (exec);
+      \draw[->] (util-obj) -- (exec);
+      \draw[->] (static) -- (exec);
+    \end{tikzpicture}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Dynamic Libraries Are Included At Runtime}
+
+    \begin{tikzpicture}[shorten >=3pt]
+      \node[draw, align=left] (foo-obj)
+           {\texttt{foo.o}};
+      \node[draw, align=left, below=of foo-obj, yshift=1em] (bar-obj)
+           {\texttt{bar.o}};
+      \node[draw, align=left, below=of bar-obj, yshift=1em] (baz-obj)
+           {\texttt{baz.o}};
+
+      \node[draw, align=left, right=of foo-obj, xshift=6em] (dynamic)
+           {\texttt{lib.so}};
+
+      \draw[->] (foo-obj) -- node [above] {\small Shared Linkage} (dynamic);
+      \draw[->] (bar-obj) -- (dynamic);
+      \draw[->] (baz-obj) -- (dynamic);
+    \end{tikzpicture}
+
+    \begin{flushright}
+    \begin{tikzpicture}[>=stealth', shorten >=2pt]
+
+      \node[draw, align=left] (main-obj)
+           {\texttt{main.o}};
+      \node[draw, align=left, below=of main-obj, yshift=1em] (util-obj)
+           {\texttt{util.o}};
+
+      \node[draw, align=left, right=of main-obj, xshift=6em] (exec)
+           {\texttt{executable}};
+
+      \node[draw, align=left, below=of exec, yshift=1em] (dynamic)
+           {\texttt{lib.so}};
+
+      \draw[->] (main-obj) -- node [above] {\small Linkage} (exec);
+      \draw[->] (util-obj) -- (exec);
+      \draw[->] (exec) -- node [right] {\small Linked at Runtime} (dynamic);
+    \end{tikzpicture}
+    \end{flushright}
+  \end{frame}
+
 \end{document}

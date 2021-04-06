@@ -2,7 +2,7 @@
 
 \lecturenumber{4}
 \title{Processes}
-\version{1.0.1}
+\version{1.0.2}
 \author{Jon Eyolfson}
 \date{April 6, 2021}
 
@@ -73,7 +73,7 @@
     \begin{itemize}
       \item Process state
       \item CPU registers
-      \item Scehduling information
+      \item Scheduling information
       \item Memory management information
       \item I/O status information
       \item Any other type of accounting information
@@ -388,11 +388,14 @@
 
     The operating can interrupt the parent process to tell it to acknowledge the child
 
-    \hspace{2em} This is a basic form of IPC called a signal
+    \hspace{2em} This is a basic form of IPC called a signal (which may be ignored)
 
     \vspace{4em}
 
-    The operating system has to keep the zombie process until the parent exits
+    The operating system has to keep a zombie process until it's acknowledged
+
+    \hspace{2em} If the parent ignores it, the zombie process needs to wait to
+    be re-parented
   \end{frame}
 
   \begin{frame}

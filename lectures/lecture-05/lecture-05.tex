@@ -2,9 +2,9 @@
 
 \lecturenumber{5}
 \title{Process API}
-\version{1.0.0}
+\version{1.0.1}
 \author{Jon Eyolfson}
-\date{April 6, 2021}
+\date{April 8, 2021}
 
 \begin{document}
   \begin{frame}[plain, noframenumbering]
@@ -240,5 +240,20 @@ int main(int argc, char *argv[]) {
   return 0;
 }
     \end{lstlisting}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Used System Calls to Create Processes}
+
+    You should be comfortable with:
+    \begin{itemize}
+      \item \texttt{execve}
+      \item \texttt{fork}
+      \item \texttt{wait}
+    \end{itemize}
+
+    \vspace{2em}
+
+    This includes understanding processes and their relationships
   \end{frame}
 \end{document}

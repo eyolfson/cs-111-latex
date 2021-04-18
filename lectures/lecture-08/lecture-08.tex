@@ -2,7 +2,7 @@
 
 \lecturenumber{8}
 \title{Advanced Scheduling}
-\version{1.0.0}
+\version{1.0.2}
 \author{Jon Eyolfson}
 \date{April 15, 2021}
 
@@ -107,7 +107,7 @@
 
     \vspace{2em}
 
-    We'll assume symmetric multiprocessing
+    We'll assume symmetric multiprocessing (SMP)
 
     \hspace{2em} All CPUs are connected to the same physical memory
 
@@ -266,7 +266,7 @@
     The soft real-time scheduling policy will either be \texttt{SCHED\_FIFO}
     or \texttt{SCHED\_RR}
 
-    \hspace{2em} There are 100 static priority levels (1---99)
+    \hspace{2em} There are 100 static priority levels (0---99)
 
     \vspace{2em}
 
@@ -432,9 +432,9 @@
         \node at (15em, 3em) {\footnotesize $\mathsf{16}$};
 
         \node [anchor=south] at (0em, 8em) {\scriptsize 0};
-        \node [anchor=south] at (8em, 8em) {\scriptsize 4};
-        \node [anchor=south] at (12em, 8em) {\scriptsize 6};
-        \node [anchor=south] at (16em, 8em) {\scriptsize 8};
+        \node [anchor=south] at (8em, 8em) {\scriptsize 16};
+        \node [anchor=south] at (12em, 8em) {\scriptsize 24};
+        \node [anchor=south] at (16em, 8em) {\scriptsize 32};
       \end{tikzpicture}
     \end{center}
   \end{frame}

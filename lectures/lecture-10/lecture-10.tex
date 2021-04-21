@@ -2,7 +2,7 @@
 
 \lecturenumber{10}
 \title{Page Tables}
-\version{1.0.0}
+\version{1.0.1}
 \author{Jon Eyolfson}
 \date{April 20, 2021}
 
@@ -354,7 +354,7 @@
     {\ttfamily
     \begin{tabular}{rl}
       Index & PPN \\
-      512   & 0x8 \\
+      511   & 0x8 \\
     \end{tabular}}
     \end{center}
       
@@ -364,7 +364,7 @@
     {\ttfamily
     \begin{tabular}{rl}
       Index & PPN \\
-      512   & 0xCAFE \\
+      511   & 0xCAFE \\
     \end{tabular}}
     \end{center}
     
@@ -487,7 +487,7 @@
 
     \vspace{2em}
 
-    $\mathsf{\# Levels = \lceil \frac{32 - 12}{10} \rceil = 2}$
+    \onslide<2->{$\mathsf{\# Levels = \lceil \frac{32 - 12}{10} \rceil = 2}$}
   \end{frame}
 
   \begin{frame}[fragile]

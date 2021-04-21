@@ -1,0 +1,638 @@
+\input{../preamble.tex}
+
+\lecturenumber{11}
+\title{Page Replacement}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{April 22, 2021}
+
+\tikzset{swapin/.style args = {(#1,#2)}{%
+    row #1 column #2/.style={nodes={text=red}}}}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Background: As You Go Down Capacity Increases, but Speed Decreases}
+
+    \begin{center}
+      \includegraphics[scale=0.175]{ComputerMemoryHierarchy.png}
+    \end{center}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Want to Hide the Hierarchy from the User}
+
+    Each level wants to pretend it has the speed of the layer above it
+
+    \hspace{2em} and the capacity of the layer below it
+
+    \vspace{2em}
+
+    The memory used by all the processes my exceed the amount of physical memory
+
+    \hspace{2em} Not all of them may be in use at the same time
+
+    \vspace{2em}
+
+    Only keep referenced pages in memory, put others on disk
+
+    \hspace{2em} Swap pages back to memory when they're needed
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Page Replacement Algorithms}
+
+    Optimal
+
+    \hspace{2em} Replace the page that won't be used for the longest
+
+    \vspace{2em}
+
+    Random
+
+    \hspace{2em} Replace a random page
+
+    \vspace{2em}
+
+    First-in First-out (FIFO)
+
+    \hspace{2em} Replace the oldest page first
+    
+    \vspace{2em}
+
+    Least Recently Used (LRU)
+
+    \hspace{2em} Replace the page that hasn't been used in the longest time
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Page Replacement Evaluation}
+
+    Assume our physical memory can only hold 4 pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \vspace{2em}
+
+    We'll use this for every example during this lecture
+
+    \hspace{2em} We want the fewest number of page faults
+
+    \vspace{2em}
+
+    For every example we'll find the number of page faults
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Optimal Example}
+
+    Assume our physical memory can only hold 4 pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={
+          align=center,
+          text height=2ex,
+          text width=1em
+        },
+        swapin/.list={
+          (2,1),
+          (3,2),
+          (4,3),
+          (5,4),
+          (5,7),
+          (2,11)
+        },
+      ]
+        \matrix (m) [
+          matrix of nodes,
+          nodes in empty cells,
+          column sep=1em,
+          column 2/.style={visible on=<2->},
+          column 3/.style={visible on=<3->},
+          column 4/.style={visible on=<4->},
+          column 5/.style={visible on=<5->},
+          column 6/.style={visible on=<6->},
+          column 7/.style={visible on=<7->},
+          column 8/.style={visible on=<8->},
+          column 9/.style={visible on=<9->},
+          column 10/.style={visible on=<10->},
+          column 11/.style={visible on=<11->},
+          column 12/.style={visible on=<12->},
+        ] {
+          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+          1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 4 & 4 \\
+            & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 \\
+            &   & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 \\
+            &   &   & 4 & 4 & 4 & 5 & 5 & 5 & 5 & 5 & 5 \\
+        };
+        \draw (m-2-1.north west) rectangle (m-5-1.south east);
+        \draw (m-2-2.north west) rectangle (m-5-2.south east);
+        \draw (m-2-3.north west) rectangle (m-5-3.south east);
+        \draw (m-2-4.north west) rectangle (m-5-4.south east);
+        \draw (m-2-5.north west) rectangle (m-5-5.south east);
+        \draw (m-2-6.north west) rectangle (m-5-6.south east);
+        \draw (m-2-7.north west) rectangle (m-5-7.south east);
+        \draw (m-2-8.north west) rectangle (m-5-8.south east);
+        \draw (m-2-9.north west) rectangle (m-5-9.south east);
+        \draw (m-2-10.north west) rectangle (m-5-10.south east);
+        \draw (m-2-11.north west) rectangle (m-5-11.south east);
+        \draw (m-2-12.north west) rectangle (m-5-12.south east);
+      \end{tikzpicture}
+    \end{center}
+
+    \begin{flushright}
+      \onslide<13->{6 page faults}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{FIFO Example}
+
+    Assume our physical memory can only hold 4 pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={
+          align=center,
+          text height=2ex,
+          text width=1em
+        },
+        swapin/.list={
+          (2,1),
+          (3,2),
+          (4,3),
+          (5,4),
+          (2,7),
+          (3,8),
+          (4,9),
+          (5,10),
+          (3,12)
+        },
+      ]
+        \matrix (m) [
+          matrix of nodes,
+          nodes in empty cells,
+          column sep=1em,
+          column 2/.style={visible on=<2->},
+          column 3/.style={visible on=<3->},
+          column 4/.style={visible on=<4->},
+          column 5/.style={visible on=<5->},
+          column 6/.style={visible on=<6->},
+          column 7/.style={visible on=<7->},
+          column 8/.style={visible on=<8->},
+          column 9/.style={visible on=<9->},
+          column 10/.style={visible on=<10->},
+          column 11/.style={visible on=<11->},
+          column 12/.style={visible on=<12->},
+        ] {
+          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+          1 & 1 & 1 & 1 & 1 & 1 & 5 & 5 & 5 & 5 & 4 & 4 \\
+            & 2 & 2 & 2 & 2 & 2 & 2 & 1 & 1 & 1 & 1 & 5 \\
+            &   & 3 & 3 & 3 & 3 & 3 & 3 & 2 & 2 & 2 & 2 \\
+            &   &   & 4 & 4 & 4 & 4 & 4 & 4 & 3 & 3 & 3 \\
+        };
+        \draw (m-2-1.north west) rectangle (m-5-1.south east);
+        \draw (m-2-2.north west) rectangle (m-5-2.south east);
+        \draw (m-2-3.north west) rectangle (m-5-3.south east);
+        \draw (m-2-4.north west) rectangle (m-5-4.south east);
+        \draw (m-2-5.north west) rectangle (m-5-5.south east);
+        \draw (m-2-6.north west) rectangle (m-5-6.south east);
+        \draw (m-2-7.north west) rectangle (m-5-7.south east);
+        \draw (m-2-8.north west) rectangle (m-5-8.south east);
+        \draw (m-2-9.north west) rectangle (m-5-9.south east);
+        \draw (m-2-10.north west) rectangle (m-5-10.south east);
+        \draw (m-2-11.north west) rectangle (m-5-11.south east);
+        \draw (m-2-12.north west) rectangle (m-5-12.south east);
+      \end{tikzpicture}
+    \end{center}
+
+    \begin{flushright}
+      \onslide<13->{10 page faults}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{FIFO Example (3 Page Frames)}
+
+    Assume our physical memory can only hold \textbf{3} pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={
+          align=center,
+          text height=2ex,
+          text width=1em
+        },
+        swapin/.list={
+          (2,1),
+          (3,2),
+          (4,3),
+          (2,4),
+          (3,5),
+          (4,6),
+          (2,7),
+          (3,10),
+          (4,11)
+        },
+      ]
+        \matrix (m) [
+          matrix of nodes,
+          nodes in empty cells,
+          column sep=1em,
+          column 2/.style={visible on=<2->},
+          column 3/.style={visible on=<3->},
+          column 4/.style={visible on=<4->},
+          column 5/.style={visible on=<5->},
+          column 6/.style={visible on=<6->},
+          column 7/.style={visible on=<7->},
+          column 8/.style={visible on=<8->},
+          column 9/.style={visible on=<9->},
+          column 10/.style={visible on=<10->},
+          column 11/.style={visible on=<11->},
+          column 12/.style={visible on=<12->},
+        ] {
+          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+          1 & 1 & 1 & 4 & 4 & 4 & 5 & 5 & 5 & 5 & 5 & 5 \\
+            & 2 & 2 & 2 & 1 & 1 & 1 & 1 & 1 & 3 & 3 & 3 \\
+            &   & 3 & 3 & 3 & 2 & 2 & 2 & 2 & 2 & 4 & 4 \\
+        };
+        \draw (m-2-1.north west) rectangle (m-4-1.south east);
+        \draw (m-2-2.north west) rectangle (m-4-2.south east);
+        \draw (m-2-3.north west) rectangle (m-4-3.south east);
+        \draw (m-2-4.north west) rectangle (m-4-4.south east);
+        \draw (m-2-5.north west) rectangle (m-4-5.south east);
+        \draw (m-2-6.north west) rectangle (m-4-6.south east);
+        \draw (m-2-7.north west) rectangle (m-4-7.south east);
+        \draw (m-2-8.north west) rectangle (m-4-8.south east);
+        \draw (m-2-9.north west) rectangle (m-4-9.south east);
+        \draw (m-2-10.north west) rectangle (m-4-10.south east);
+        \draw (m-2-11.north west) rectangle (m-4-11.south east);
+        \draw (m-2-12.north west) rectangle (m-4-12.south east);
+      \end{tikzpicture}
+    \end{center}
+
+    \begin{flushright}
+      \onslide<13->{9 page faults}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Bélády's Anomaly Says More Page Frames Causes More Faults}
+
+    This is a problem with FIFO algorithms
+
+    \hspace{2em} Does not exist with LRU or ``stack-based algorithms''
+
+    \vspace{2em}
+
+    Paper in 2010 found that this FIFO anomaly is unbounded (\url{https://arxiv.org/abs/1003.1336})
+
+    \hspace{2em} You could construct a sequence to get any arbitrary page fault ratio
+
+    \vspace{2em}
+
+    For other algorithms:
+
+    \hspace{2em} increasing the number of page frames decreases the number of
+    page faults
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{LRU Example (Use FIFO to Break Ties)}
+
+    Assume our physical memory can only hold 4 pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={
+          align=center,
+          text height=2ex,
+          text width=1em
+        },
+        swapin/.list={
+          (2,1),
+          (3,2),
+          (4,3),
+          (5,4),
+          (4,7),
+          (5,10),
+          (4,11),
+          (2,12)
+        },
+      ]
+        \matrix (m) [
+          matrix of nodes,
+          nodes in empty cells,
+          column sep=1em,
+          column 2/.style={visible on=<2->},
+          column 3/.style={visible on=<3->},
+          column 4/.style={visible on=<4->},
+          column 5/.style={visible on=<5->},
+          column 6/.style={visible on=<6->},
+          column 7/.style={visible on=<7->},
+          column 8/.style={visible on=<8->},
+          column 9/.style={visible on=<9->},
+          column 10/.style={visible on=<10->},
+          column 11/.style={visible on=<11->},
+          column 12/.style={visible on=<12->},
+        ] {
+          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+          1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 5 \\
+            & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 \\
+            &   & 3 & 3 & 3 & 3 & 5 & 5 & 5 & 5 & 4 & 4 \\
+            &   &   & 4 & 4 & 4 & 4 & 4 & 4 & 3 & 3 & 3 \\
+        };
+        \draw (m-2-1.north west) rectangle (m-5-1.south east);
+        \draw (m-2-2.north west) rectangle (m-5-2.south east);
+        \draw (m-2-3.north west) rectangle (m-5-3.south east);
+        \draw (m-2-4.north west) rectangle (m-5-4.south east);
+        \draw (m-2-5.north west) rectangle (m-5-5.south east);
+        \draw (m-2-6.north west) rectangle (m-5-6.south east);
+        \draw (m-2-7.north west) rectangle (m-5-7.south east);
+        \draw (m-2-8.north west) rectangle (m-5-8.south east);
+        \draw (m-2-9.north west) rectangle (m-5-9.south east);
+        \draw (m-2-10.north west) rectangle (m-5-10.south east);
+        \draw (m-2-11.north west) rectangle (m-5-11.south east);
+        \draw (m-2-12.north west) rectangle (m-5-12.south east);
+      \end{tikzpicture}
+    \end{center}
+
+    \begin{flushright}
+      \onslide<13->{8 page faults}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Implementing LRU in Hardware Has to Search All Pages}
+
+    You could implement it by keeping a counter for each page
+
+    \vspace{2em}
+
+    For each page reference, save the system clock into the counter
+
+    \vspace{2em}
+
+    For replacement, scan through the pages and find the one with the oldest clock
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Implementing LRU in Software is Too Expensive}
+
+    Create a doubly linked list of pages
+
+    \vspace{2em}
+
+    For each page reference, move it to the front of the list
+
+    \vspace{2em}
+
+    For replacement, remove from the back of the list
+
+    \vspace{2em}
+
+    It requires 6 pointer updates for each page reference, and
+
+    \hspace{2em} also creates a high contention bottleneck for multiple processors
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Implementing LRU in Practice Isn't Going to Work}
+
+    We settle for approximate LRU
+
+    \hspace{2em} LRU is an approximation of the optimal case anyways
+
+    \vspace{2em}
+
+    There's lots of different tweaks you can do to implement it more efficiently
+
+    \vspace{2em}
+
+    We'll be looking at the clock algorithm, but there's also:
+
+    \hspace{2em} Least Frequently Used (LFU), 2Q, Adaptive Replacement Cache (ARC)
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Clock Algorithm}
+
+    Data structures:
+    \begin{itemize}
+      \item Keeps a circular list of pages in memory
+      \item Uses a reference bit for each page in memory (light grey in next slides)
+      \item Has a ``hand'' (iterator) pointing to the last element examined
+    \end{itemize}
+
+    \vspace{2em}
+    Algorithm, to insert a new page:
+    \begin{itemize}
+      \item Check the hand's reference bit, if it's 0 then place the page and advance hand
+      \item If the reference bit is 1, set it to 0, advance the hand, and repeat
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Clock Example (with Diagram)}
+
+    Assume our physical memory can only hold 4 pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \begin{center}
+      \begin{tikzpicture}
+        \matrix (m) [
+          matrix of nodes,
+          nodes in empty cells,
+          minimum width=2em,
+          minimum height=2em,
+          align=center,
+          column sep=1em,
+          column 1/.style={visible on=<2->},
+          column 2/.style={visible on=<3->},
+          column 3/.style={visible on=<4->},
+          column 4/.style={visible on=<5->},
+          column 5/.style={visible on=<6->},
+          column 6/.style={visible on=<7->},
+          column 7/.style={visible on=<8->},
+          column 8/.style={visible on=<14->},
+          column 9/.style={visible on=<15->},
+          column 10/.style={visible on=<16->},
+          column 11/.style={visible on=<17->},
+          column 12/.style={visible on=<22->},
+        ] {
+          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+        };
+      \end{tikzpicture}
+
+      \vspace{1em}
+
+      \begin{tikzpicture}[
+        box/.style={
+          draw,
+          align=center,
+          minimum width=2em,
+          minimum height=6em,
+          rectangle split,
+          rectangle split parts=2,
+          rectangle split part fill={white, black!20},
+        }
+      ]
+
+        \node (c) at (0, 0) {};
+
+        \node<1> [above=of c, box] (n) {0 \nodepart{second} 0};
+        \node<2-8> [above=of c, box] {1 \nodepart{second} 1};
+        \node<9-12> [above=of c, box] {1 \nodepart{second} 0};
+        \node<13-16> [above=of c, box] {5 \nodepart{second} 1};
+        \node<17-20> [above=of c, box] {5 \nodepart{second} 0};
+        \node<21-> [above=of c, box] {4 \nodepart{second} 1};
+
+        \node<1-2> [right=of c, box] (e) {0 \nodepart{second} 0};
+        \node<3-> [right=of c, box] {2 \nodepart{second} 1};
+        \node<10-13> [right=of c, box] {2 \nodepart{second} 0};
+        \node<14-17> [right=of c, box] {1 \nodepart{second} 1};
+        \node<18-21> [right=of c, box] {1 \nodepart{second} 0};
+        \node<22-> [right=of c, box] {5 \nodepart{second} 1};
+
+        \node<1-3> [below=of c, box] (s) {0 \nodepart{second} 0};
+        \node<4-> [below=of c, box] {3 \nodepart{second} 1};
+        \node<11-14> [below=of c, box] {3 \nodepart{second} 0};
+        \node<15-18> [below=of c, box] {2 \nodepart{second} 1};
+        \node<19-> [below=of c, box] {2 \nodepart{second} 0};
+
+        \node<1-4> [left=of c, box] (w) {0 \nodepart{second} 0};
+        \node<5-> [left=of c, box] (w) {4 \nodepart{second} 1};
+        \node<12-15> [left=of c, box] (w) {4 \nodepart{second} 0};
+        \node<16-19> [left=of c, box] (w) {3 \nodepart{second} 1};
+        \node<20-> [left=of c, box] (w) {3 \nodepart{second} 0};
+
+        \path [->] (n) edge [bend left] (e)
+                   (e) edge [bend left] (s)
+                   (s) edge [bend left] (w)
+                   (w) edge [bend left] (n);
+
+        \path<1,5-8,12,16,20> [->] (c) edge (n);
+        \path<2,9,13,17,21> [->] (c) edge (e);
+        \path<3,10,14,18,22-> [->] (c) edge (s);
+        \path<4,11,15,19> [->] (c) edge (w);
+
+      \end{tikzpicture}
+    \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Clock Example}
+
+    Assume our physical memory can only hold 4 pages, and we access the following:
+
+    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+
+    \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={
+          align=center,
+          text height=2ex,
+          text width=1em
+        },
+        swapin/.list={
+          (2,1),
+          (3,2),
+          (4,3),
+          (5,4),
+          (2,7),
+          (3,8),
+          (4,9),
+          (5,10),
+          (2,11),
+          (3,12)
+        },
+      ]
+        \matrix (m) [
+          matrix of nodes,
+          nodes in empty cells,
+          column sep=1em,
+          column 2/.style={visible on=<2->},
+          column 3/.style={visible on=<3->},
+          column 4/.style={visible on=<4->},
+          column 5/.style={visible on=<5->},
+          column 6/.style={visible on=<6->},
+          column 7/.style={visible on=<7->},
+          column 8/.style={visible on=<8->},
+          column 9/.style={visible on=<9->},
+          column 10/.style={visible on=<10->},
+          column 11/.style={visible on=<11->},
+          column 12/.style={visible on=<12->},
+        ] {
+          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+          1 & 1 & 1 & 1 & 1 & 1 & 5 & 5 & 5 & 5 & 4 & 4 \\
+            & 2 & 2 & 2 & 2 & 2 & 2 & 1 & 1 & 1 & 1 & 5 \\
+            &   & 3 & 3 & 3 & 3 & 3 & 3 & 2 & 2 & 2 & 2 \\
+            &   &   & 4 & 4 & 4 & 4 & 4 & 4 & 3 & 3 & 3 \\
+        };
+        \draw (m-2-1.north west) rectangle (m-5-1.south east);
+        \draw (m-2-2.north west) rectangle (m-5-2.south east);
+        \draw (m-2-3.north west) rectangle (m-5-3.south east);
+        \draw (m-2-4.north west) rectangle (m-5-4.south east);
+        \draw (m-2-5.north west) rectangle (m-5-5.south east);
+        \draw (m-2-6.north west) rectangle (m-5-6.south east);
+        \draw (m-2-7.north west) rectangle (m-5-7.south east);
+        \draw (m-2-8.north west) rectangle (m-5-8.south east);
+        \draw (m-2-9.north west) rectangle (m-5-9.south east);
+        \draw (m-2-10.north west) rectangle (m-5-10.south east);
+        \draw (m-2-11.north west) rectangle (m-5-11.south east);
+        \draw (m-2-12.north west) rectangle (m-5-12.south east);
+      \end{tikzpicture}
+    \end{center}
+
+    \begin{flushright}
+      \onslide<13->{10 page faults}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Swapping to Disk is Less Important Now}
+
+    Memory is cheap, and has quite high capacity
+
+    \hspace{2em} Some systems may not even have swap
+
+    \vspace{2em}
+
+    Larger page sizes allow for speedup
+
+    \hspace{2em} Trade more fragmentation for more TLB coverage
+
+    \vspace{2em}
+
+    With 64 bits we have a huge address space compared to memory capacity
+
+    \hspace{2em} Lots of room to use virtual addresses for other uses
+    (\texttt{mmap})
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Page Replacement Algorithms Aim to Reduce Page Faults}
+
+    We saw the following:
+    \begin{itemize}
+      \item Optimal (good for comparison but not realistic)
+      \item Random (actually works surprisingly well, avoids the worst case)
+      \item FIFO (easy to implement but Bélády's anomaly)
+      \item LRU (gets close to optimal but expensive to implement)
+      \item Clock (a decent approximation of LRU)
+    \end{itemize}
+  \end{frame}
+\end{document}

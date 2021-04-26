@@ -1,0 +1,93 @@
+\input{../preamble}
+
+\labnumber{2}
+\title{You Spin Me Round Robin}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{April 26, 2021}
+\duedate{May 10, 2021 at 8 PM PST}
+
+\begin{document}
+
+\maketitle
+
+In this lab you'll be writing the implementation for round robin scheduling
+for a given workload and quantum length.
+You'll be given a basic skeleton that parses an input file and command line
+arguments.
+You're expected to understand how you would implement round robin if you were
+to implement it yourself in a kernel (which means doing it in C).
+Lecture 9 gave a quick introduction into how to use the C style linked lists
+and the structure of the skeleton code.
+
+\paragraph{Additional APIs.}
+
+You may need a doubly linked list for your implement.
+For this lab you should use \texttt{TAILQ} from \texttt{sys/queue.h}.
+Use \texttt{man 3 tailq} to see all of the macros you can use.
+There's already a list created for you called \texttt{process\_list} with a
+\texttt{TAILQ} entry name of \texttt{pointers}.
+You should not have to include any more headers or use any additional APIs,
+besides adding your code.
+
+\paragraph{Starting the lab.}
+
+Run the following command to get the skeleton for Lab 2:
+\texttt{git pull upstream main}.
+You should be able to run \texttt{make} in the \texttt{lab-02} directory to
+create a \texttt{rr} executable, and then \texttt{make clean} to remove all
+binary files.
+There is also an example \texttt{processes.txt} file in your lab directory.
+The \texttt{rr} executable takes a file path as the first argument, and a
+quantum length as the second.
+For example, you can run: \texttt{./rr processes.txt 3}.
+
+\paragraph{Files to modify.}
+
+You should only be modifying \texttt{rr.c} and \texttt{README.md} in the
+\texttt{lab-02} directory.
+
+\paragraph{Your task.}
+
+You should only add additional fields to \texttt{struct process} and add your
+code to \texttt{main} between the comments in the skeleton. You may add
+functions to call from main if you wish, but calls should only be between the
+comments. We assume a single time unit is the smallest atomic unit (we cannot
+split it even smaller).
+You should ensure your scheduler calculates the total waiting time and total
+response time to the variables \texttt{total\_waiting\_time} and
+\texttt{total\_response\_time}.
+The program then outputs the average waiting time and response time for you.
+Finally, fill in your \texttt{README.md} so that you could use your program
+without having to use this document.
+
+\paragraph{Errors.}
+
+All the allocations and input are handled for you, so there should be no to
+handle.
+You may assume integer overflows will not happen with a valid schedule.
+
+\paragraph{Tips.}
+
+You should ensure your implementation works with the examples in Lecture 7.
+
+\paragraph{Example output.}
+
+The \texttt{process.txt} file is the example from Lecture 7. You should be able
+run:
+
+\begin{lstlisting}
+> ./rr processes.txt 3
+Average waiting time: 7.00             
+Average response time: 2.75
+\end{lstlisting}
+
+\paragraph{Submission.}
+
+Simply push your code using \lstinline|git push origin main| (or simply
+\lstinline|git push|).
+For late days will we look at the timestamp on our server.
+We will never use your commit times as proof of submission, only when you
+push your code to the course Git server.
+
+\end{document}

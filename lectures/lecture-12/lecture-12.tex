@@ -1,0 +1,219 @@
+\input{../preamble.tex}
+
+\lecturenumber{12}
+\title{Midterm Review}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{April 27, 2021}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The Midterm Will Be Open for 24 Hours}
+
+    Anytime on the April 29 in PST
+
+    \hspace{2em} (12:00 AM  to 11:59 PM)
+
+    \vspace{2em}
+
+    The midterm will be 2 hours from when you start
+
+    \hspace{2em} No pausing and coming back
+
+    \vspace{2em}
+
+    It'll be open book
+
+    \hspace{2em} I'm assuming there's no way to stop that
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The Exam Will Have 3 Types of Questions}
+
+    There will be:
+    \begin{itemize}
+      \item 15 fill in the term / multiple choice questions
+      \item 6 short answers
+      \item 2 long answers
+    \end{itemize}
+
+    \vspace{2em}
+
+    It'll cover everything up and including Lecture 11
+
+    \vspace{2em}
+
+    It'll be graded out of 100
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Winter 2020 Midterm is Good Indicator}
+
+    We'll go over that, except for question 6 and 7
+
+    \vspace{1em}
+
+    For question 6, it's the clock algorithm we went over
+
+    \hspace{2em} It was basically FIFO
+
+    \vspace{1em}
+
+    For question 7, we didn't talk about emulation
+
+    \hspace{1em} Maybe we'll talk about Windows Subsystem for Linux later in the
+    course
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Question 1}
+
+    What is the benefit of using the copy-on-right optimization when performing
+    a fork in the Linux system? 
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Question 2}
+
+    Round Robin, First come First Serve, and Shortest Job First are three
+    scheduling algorithms that can be used to schedule a CPU.
+
+    \vspace{2em}
+
+    What are their advantages and disadvantages? Which one is likely to have the
+    largest overhead? Why?
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Question 3 (1)}
+
+    Assume you have a system with three processes (X, Y, and Z) and a single
+    CPU.
+
+    Process X has the highest priority, process Z has the lowest, and Y is in
+    the middle.
+
+    \vspace{2em}
+
+    Assume a priority-based scheduler (i.e., the scheduler runs the highest
+    priority job, performing preemption as necessary).
+    Processes can be in one of five states: RUNNING, READY, BLOCKED, not yet
+    created, or terminated.
+
+    \vspace{2em}
+
+    Given the following cumulative timeline of process behavior, indicate the
+    state the specified process is in AFTER that step, and all preceding steps,
+    have taken place. Assume the scheduler has reacted to the specified
+    workload change.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Question 3 (2)}
+
+    For all questions in this Part, use the following options for each answer:
+    \begin{itemize}
+      \item RUNNING
+      \item READY
+      \item BLOCKED
+      \item Process has not been created yet
+      \item Not enough information to determine
+      \item None of the above
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Question 3 (3)}
+
+    \begin{itemize}
+      \item Process X is loaded into memory and begins; it is the only
+            user-level process in the system. Process X is in which state?
+      \item Process X calls fork() and creates Process Y.Process X is in which
+            state?
+      \item The running process issues an I/O request to the disk. Process X is
+            in which state? Process Y is in which state?
+      \item The running process calls fork() and creates process Z. Process X is
+            in which state? Process Y is in which state? Process Z is in which
+            state?
+      \item The previously issued I/O request completes. Process X is in which
+            state? Process Y is in which state? Process Z is in which state?
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Question 4}
+
+    For the next two questions, assume the following code is compiled and run on
+    a modern linux machine (assume any irrelevant details have been omitted):
+
+    \begin{lstlisting}
+main() {
+  int a = 0;
+  int rc = fork();
+  a++;
+  if (rc == 0) { rc = fork(); a++; }
+  else { a++; }
+  printf(“Hello!\n”);
+  printf(“a is %d\n”, a);
+}
+    \end{lstlisting}
+
+    \begin{itemize}
+      \item Assuming fork() never fails, how many times will the message
+            \lstinline|Hello!\n| be displayed? Explain how you get this result.
+      \item What will be the largest value of “a” displayed by the program?
+            Explain how you get this result.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Question 5}
+
+    Consider the following set of processes, with associated processing times
+    and priorities:
+
+    \begin{center}
+      \footnotesize
+      \begin{tabular}{lrr}
+        Process & Burst Time & Priority \\
+        A & 4 & 3 \\
+        B & 1 & 1 \\
+        C & 2 & 3 \\
+        D & 1 & 4 \\
+        E & 4 & 2 \\
+      \end{tabular}
+    \end{center}
+
+    All of the processes arrive at time 0 in the order Process A, B, C, D, E.
+
+    \vspace{1em}
+
+    For each scheduling algorithm, fill in the table with the process that is
+    running on the CPU (for time slice-based algorithms, assume a 1 unit time
+    slice).
+
+    \vspace{1em}
+
+    \textit{Table says to do: FIFO, Round Robin, SRTF, Priority}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We'll Quickly Run Over Lectures 1 to 11}
+
+    Most of the concepts are important, you'll have to know the terminology
+
+    \vspace{2em}
+
+    Don't rely too much on the exam being open book
+
+    \hspace{2em} If you're looking up everything you'll run out of time
+
+    \vspace{2em}
+
+    You'll want to understand what you did in Lab 0 and 1
+  \end{frame}
+\end{document}

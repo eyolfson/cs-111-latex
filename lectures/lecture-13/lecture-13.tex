@@ -1,0 +1,575 @@
+\input{../preamble.tex}
+
+\lecturenumber{13}
+\title{Threads}
+\version{1.0.1}
+\author{Jon Eyolfson}
+\date{May 4, 2021}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Threads are Like Processes with Shared Memory}
+
+    The same principle as a process, except by default they share memory
+
+    \hspace{2em} They have their own registers, program counter, and stack
+
+    \vspace{2em}
+
+    They have the same address space, so changes appear in each thread
+
+    \vspace{2em}
+
+    You need to explicitly state if any memory is specific to a thread (TLS)
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{One Process Can have Multiple Threads}
+
+    By default a process just executes code in its own address space
+
+    \vspace{2em}
+
+    Threads allow multiple executions in the same address space
+
+    \vspace{2em}
+
+    They're lighter weight and less expensive to create than processes
+
+    \hspace{2em} They share code, data, file descriptors, etc.
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Assuming One CPU, Threads Can Express Concurrency}
+
+    A process can appear like it's executing in multiple locations at once
+
+    \hspace{2em} However, the OS is just context switching within a process
+
+    \vspace{2em}
+
+    It may be easier to program concurrently
+
+    \hspace{2em} e.g., handle a web request in a new thread
+
+    \vspace{2em}
+
+    \begin{lstlisting}
+while (true) {
+  struct request *req = get_request();
+  create_thread(process_request, req);
+}
+    \end{lstlisting}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Threads are Lighter Weight than Processes}
+
+    \begin{tabular}{ll}
+      \textbf{Process} & \textbf{Thread} \\
+      \\
+      Independent code / data / heap & Shared code / data / heap \\
+      \\
+      Independent execution & Must live within an executing process \\
+      \\
+      Has its own stack and registers & Has its own stack and registers \\
+      \\
+      Expensive creation and context switching & Cheap creation and context switching \\
+      \\
+      Completely removed from OS on exit & Stack removed from process on exit \\
+    \end{tabular}
+
+    \vspace{2em}
+
+    When a process dies, all threads within it die as well!
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{We'll be Using POSIX Threads}
+
+    For Windows, there's a Win32 thread, but we're going to use *UNIX threads
+
+    \vspace{2em}
+
+    \lstinline|#include <pthread.h>| --- in your source file
+
+    \vspace{2em}
+
+    \lstinline|-pthread| --- compile and link the pthread library
+
+    \vspace{2em}
+
+    All the pthread functions have documentation in the \lstinline|man| pages
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{You Create Threads with \texttt{pthread\_create}}
+
+    \begin{lstlisting}
+int pthread_create(pthread_t* thread, 
+                   const pthread_attr_t* attr,
+                   void* (*start_routine)(void*),
+                   void* arg);
+    \end{lstlisting}
+
+    \vspace{1em}
+
+    \begin{tabular}{rl}
+      thread & creates a handle to a thread at pointer location \\
+
+      attr & thread attributes (NULL for defaults, more details later) \\
+
+      start\_routine & function to start execution \\
+
+      arg & value to pass to start\_routine \\
+    \end{tabular}
+
+    \vspace{2em}
+    
+    returns 0 on success, error number otherwise (contents of *thread are
+    undefined)
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Creating Threads is a Bit Different than Processes}
+
+    \begin{lstlisting}
+#include <pthread.h>
+#include <stdio.h>
+
+void* run(void*) {
+  printf("In run\n");
+  return NULL;
+}
+
+int main() {
+  pthread_t thread;
+  pthread_create(&thread, NULL, &run, NULL);
+  printf("In main\n");
+}
+    \end{lstlisting}
+
+    \vspace{2em}
+
+    What are some differences? Are we missing anything?
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{The \texttt{wait} Equivalent for Threads --- Join}
+
+    \begin{lstlisting}
+int pthread_join(pthread_t thread,
+                 void** retval)
+    \end{lstlisting}
+
+    \vspace{1em}
+
+    \begin{tabular}{rp{10cm}}
+  thread & wait for this thread to terminate (thread must be joinable) \\
+
+  retval & stores exit status of thread (set by {\tt pthread\_exit}) to
+                 the location pointed by *retval. If cancelled returns
+                 {\tt PTHREAD\_CANCELED}. {\tt NULL} is ignored. \\
+    \end{tabular}
+
+  \vspace{2em}
+
+  returns 0 on success, error number otherwise 
+  
+  \vspace{2em}
+
+  {\bf Only call this one time per thread!}
+
+  \hspace{2em} Multiple calls on the same thread leads to undefined behavior
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Previous Example that Waits Properly}
+
+    \begin{lstlisting}
+#include <pthread.h>
+#include <stdio.h>
+
+void* run(void*) {
+  printf("In run\n");
+  return NULL;
+}
+
+int main() {
+  pthread_t thread;
+  pthread_create(&thread, NULL, &run, NULL);
+  printf("In main\n");
+  pthread_join(thread, NULL);
+}
+    \end{lstlisting}
+
+    \vspace{2em}
+
+    Now we joined, the thread's resources are cleaned up
+  \end{frame}
+
+
+  \begin{frame}[fragile]
+    \frametitle{Ending a Thread Early (Think of \texttt{exit})}
+
+    \begin{lstlisting}
+void pthread_exit(void *retval);
+    \end{lstlisting}
+
+    \vspace{1em}
+
+    \begin{tabular}{rl}
+      retval & return value passed to function that calls {\tt pthread\_join} \\
+    \end{tabular}
+
+    \vspace{2em}
+    
+    Note: start\_routine returning is equivalent of calling {\tt pthread\_exit}
+
+    \hspace{2em} Think of the difference between returning from main and
+    \texttt{exit}
+
+    \vspace{2em}
+    {\tt pthread\_exit} is called implicitly when the {\tt start\_routine} of a
+    thread returns
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Detached Threads}
+
+    {\it Joinable} threads (the default) wait for someone to call
+    {\tt pthread\_join}
+  
+    \hspace{2em} then they release their resources
+
+    \vspace{2em}
+
+    {\it Detached} threads release their resources when they terminate
+
+    \vspace{2em}
+
+    \begin{lstlisting}
+int pthread_detach(pthread_t thread);
+    \end{lstlisting}
+
+    \vspace{1em}
+
+    \begin{tabular}{rl}
+      thread & marks the thread as detached \\
+    \end{tabular}
+
+    \vspace{2em}
+
+    returns 0 on success, error number otherwise
+
+    \vspace{2em}
+
+    Calling {\tt pthread\_detach} on an already detached is undefined
+    behavior
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{Detached Threads Aren't Joined}
+
+    \begin{lstlisting}
+#include <pthread.h>
+#include <stdio.h>
+
+void* run(void*) {
+  printf("In run\n");
+  return NULL;
+}
+
+int main() {
+  pthread_t thread;
+  pthread_create(&thread, NULL, &run, NULL);
+  pthread_detach(thread);
+  printf("In main\n");
+}
+    \end{lstlisting}
+
+    This code just prints ``In main'', why?
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{\texttt{pthread\_exit} in main Waits for All Detached Threads to Finish}
+
+    \begin{lstlisting}
+#include <pthread.h>
+#include <stdio.h>
+
+void* run(void*) {
+  printf("In run\n");
+  return NULL;
+}
+
+int main() {
+  pthread_t thread;
+  pthread_create(&thread, NULL, &run, NULL);
+  pthread_detach(thread);
+  printf("In main\n");
+  pthread_exit(NULL);
+}
+    \end{lstlisting}
+
+    This code now works as expected
+  \end{frame}
+
+  \begin{frame}[fragile]
+    \frametitle{You Can Use Attributes To Get/Set Thread Variables}
+
+    \begin{lstlisting}
+size_t stacksize;
+pthread_attr_t attributes;
+pthread_attr_init(&attributes);
+pthread_attr_getstacksize(&attributes, &stacksize);
+printf("Stack size = %i\n", stacksize);
+pthread_attr_destroy(&attributes);
+    \end{lstlisting}
+
+    \vspace{2em}
+
+    Running this should show a stack size of 8 MiB (on most Linux systems)
+
+    \vspace{2em}
+
+    You can also set a thread state to joinable
+
+    \begin{lstlisting}
+pthread_attr_setdetachstate(&attributes,
+                            PTHREAD_CREATE_JOINABLE);
+    \end{lstlisting}
+
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Multithreading Models}
+
+    Where do we implement threads?
+
+    \hspace{2em} We can either do user or kernel threads
+
+    \vspace{2em}
+
+    User threads are completely in user-space
+
+    \hspace{2em} Kernel doesn't treat your threaded process any differently
+
+    \vspace{2em}
+
+    Kernel threads are implemented in kernel-space
+
+    \hspace{2em} Kernel manages everything for you, and can treat threads specially
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Thread Support Requires a Thread Table}
+
+    Similar to the process table we saw previously
+
+    \hspace{2em} It could be in user-space or kernel-space depending
+
+    \vspace{2em}
+
+    For user threads, there also needs to be a run-time system to determine
+    scheduling
+
+    \vspace{2em}
+
+    In both models each process can contain multiple threads
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Could Avoid System Calls, or Let a Thread Block Everything}
+
+    For pure user-level threads (again, no kernel support):
+
+    \begin{itemize}
+      \item Very fast to create and destroy, no system call, no context switches
+      \item One thread the blocks blocks the entire process (kernel can't distinguish)
+    \end{itemize}
+
+    \vspace{2em}
+
+    For kernel-level threads:
+
+    \begin{itemize}
+      \item Slower, creation involves system calls
+      \item If one thread blocks, the kernel can schedule another one
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{All Threading Libraries You Use Run in User-mode}
+
+    The thread library maps user threads to kernel threads
+
+    \vspace{2em}
+
+    Many-to-one: threads completely implemented in user-space
+
+    \hspace{2em} the kernel only sees one process
+
+    \vspace{2em}
+
+    One-to-one: one user thread maps directly to one kernel thread
+
+    \hspace{2em} the kernel handles everything
+
+    \vspace{2em}
+
+    Many-to-many: many user-level threads map to many kernel level threads
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Many-to-one is Pure User-space Implementation}
+
+    It's fast (as outlined before) and portable
+
+    \hspace{2em} It doesn't depend on the system, it's just a library
+
+    \vspace{2em}
+
+    Drawbacks are that one thread blocking causes all threads to block
+
+    \hspace{2em} Also we cannot execute threads in parallel
+
+    \hspace{4em} The kernel will only schedule a process to run
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{One-to-one Just Uses the Kernel Thread Implementation}
+
+    There's just a thin wrapper around the system calls to make it easier to use
+
+    \vspace{2em}
+
+    Exploits the full parallelism of your machine
+
+    \hspace{2em} The kernel can schedule multiple threads simultaneously
+
+    \vspace{2em}
+
+    We do however need to use a slower system call interface, and we lose some
+    control
+
+    \vspace{4em}
+
+    Typically this is the actual implementation used, we'll assume this for
+    Linux
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Many-to-many is a Hybrid Approach}
+
+    The idea is that there are more user-level threads than kernel-level threads
+
+    \hspace{2em} Cap the number of kernel-level threads to the number we could
+    run in parallel
+
+    \vspace{2em}
+
+    We can get the most out of multiple CPUs while reducing the number of system
+    calls
+
+    \vspace{2em}
+
+    However, this leads to a complicated thread library
+
+    \hspace{2em} Depending on your mapping luck, you may block other threads
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Threads Complicate the Kernel}
+
+    How should \texttt{fork} work with a process with multiple threads?
+
+    \hspace{2em} Copy all threads to the new process, in whatever state they're
+    in?
+
+    \hspace{4em} How would this get out of hand?
+
+    \vspace{2em}
+
+    Linux only copies the thread that called \texttt{fork} into a new process
+
+    \hspace{2em} If it hits \texttt{pthread\_exit} it'll always exit with status
+    0
+
+    \hspace{4em} (at least as far as I can tell)
+
+    \vspace{2em}
+
+    There's \texttt{pthread\_atfork} (not covered in this course) to control
+    what happens
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Signals are Sent to a Process}
+
+    Which thread should receive a signal? all of them?
+
+    \vspace{2em}
+
+    Linux will just pick one random thread to handle the signal
+
+    \hspace{2em} Makes concurrency hard, any thread could be interrupted
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Instead of Many-to-many, You Can Use a Thread Pool}
+
+    The goal of many-to-many thread mapping is to avoid creation costs
+
+    \vspace{2em}
+
+    A thread pool creates a certain number of threads and a queue of tasks
+
+    \hspace{2em} (maybe as many threads as CPUs in the system)
+
+    \vspace{2em}
+
+    As requests come in, wake them up and give them work to do
+
+    \vspace{2em}
+
+    Reuse them, when there's no work, put them to sleep
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Our Next Complication}
+
+    Let's create a program that spawns 8 threads
+
+    \hspace{2em} Each thread increments the same variable 10,000 times
+
+    \vspace{2em}
+
+    What should the final value of the variable be?
+
+    \hspace{2em} The initial value of the variable is 0
+
+    \vspace{2em}
+
+    Run \texttt{examples/lecture-13/pthread-datarace}
+
+    \hspace{2em} Can you fix it?
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Both Processes and (Kernel) Threads Enable Parallelization}
+
+    We explored threads, and related them to something we already know (processes)
+    \begin{itemize}
+      \item Threads are lighter weight, and share memory by default
+      \item Each process can have multiple (kernel) threads
+      \item Most implementations use one-to-one user-to-kernel thread mapping
+      \item The operating system has to manage what happens during a fork, or signals
+      \item We now have synchronization issues
+    \end{itemize}
+  \end{frame}
+\end{document}

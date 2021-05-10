@@ -1,0 +1,144 @@
+\input{../preamble}
+
+\labnumber{3}
+\title{Hash Hash Hash}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{May 10, 2021}
+\duedate{May 21, 2021 at 8 PM PST}
+
+\begin{document}
+
+\maketitle
+
+In this lab you'll be making a hash table implementation safe to use
+concurrently.
+You'll be given a serial hash table implementation, and two additional hash
+table implementations to modify.
+You're expected to implement two locking strategies and compare them with the
+base implementation.
+The hash table implementation uses separate chaining to resolve collisions.
+Each cell of the hash table is a singly linked list of key/value pairs.
+You are not to change the algorithm, only add mutex locks.
+Note that this is basically the implementation of Java concurrent hash tables,
+except they have an optimization that doesn't create a linked list if there's
+only one entry at a hash location.
+
+\paragraph{Additional APIs.}
+
+Similar to Lab 2, the base implementation uses a linked list, but instead of
+\texttt{TAILQ}, it uses \texttt{SLIST}.
+You should note that the \texttt{SLIST\_} functions modify the \texttt{pointers}
+field of \texttt{struct list\_entry}.
+For your implementation you should only use \texttt{pthread\_mutex\_t}, and
+the associated init/lock/unlock/destroy functions.
+You will have to add the proper \texttt{\#include} yourself.
+
+\paragraph{Starting the lab.}
+
+Run the following command to get the skeleton for Lab 3:
+\texttt{git pull upstream main}.
+You should be able to run \texttt{make} in the \texttt{lab-03} directory to
+create a \texttt{hash-table-tester} executable, and then \texttt{make clean}
+to remove all binary files.
+The executable takes two command link arguments: \texttt{-t} changes the number
+of threads to use (default 4), and \texttt{-s} changes the number of hash table
+entries to add per thread (default 25,000).
+For example you can run: \texttt{./hash-table-tester -t 8 -s 50000}.
+
+\paragraph{Files to modify.}
+
+You should only be modifying \texttt{hash-table-v1.c}, \texttt{hash-table-v2.c},
+and \texttt{README.md} in the \texttt{lab-03} directory.
+
+\paragraph{Tester Code.}
+
+The tester code generates consistent entries in serial such that every run
+with the same \texttt{-t} and \texttt{-s} flags will receive the same data.
+All hash tables have room for \texttt{4096} entries, so for any sufficiently
+large number of additions, there will be collisions.
+The tester code runs the base hash table in serial for timing comparsions,
+and the other two versions with the specified number of threads.
+For each version it reports the number of $\mu$s per implementation.
+It then runs a sanity check, in serial, that each hash table contains all
+the elements it put in.
+By default your hash tables should run \texttt{-t} times faster (assuming you
+have that number of cores).
+However, you should have missing entries (we made it fail faster!).
+Correct implementations should \textit{at least} have no entries missing in
+the hash table.
+However, just because you have no entries missing, you still may have issues
+with your implementation (concurrent programming is significantly harder).
+
+\paragraph{Your task.}
+
+Using only \texttt{pthread\_mutex\_*}, you should create two thread safe
+versions of the hash table ``add entry'' functions.
+You only have to add locking calls to \texttt{hash\_table\_v1\_add\_entry}
+and \texttt{hash\_table\_v2\_add\_entry}, all other functions are called
+serially, mainly for sanity checks.
+By default there is a data race finding and adding entries to the list.
+You'll need to fill in your \texttt{README.md} completely.
+Most sections are what you expect from previous labs, however there is more
+to add for this lab (explained below).
+
+For the first version, \texttt{v1}, you should only be concerned with
+correctness.
+Create a \textbf{single} mutex, only for \texttt{v1}, and make 
+\texttt{hash\_table\_v1\_add\_entry} thread safe by adding the proper locking
+calls.
+Remember, you should only modify code in \texttt{hash-table-v1.c}.
+You'll have to explain why your implementation is corrected in your
+\texttt{README.md}.
+You should test it versus the base hash table implementation and also add your
+findings to \texttt{README.md}.
+
+For the second version, \texttt{v2}, you should be concerned with correctness
+and performance.
+You can now create as many mutexes as you like in \texttt{hash-table-v2.c}.
+Make \texttt{hash\_table\_v2\_add\_entry} thread safe by adding the proper
+locking calls.
+Similar to the first version, you'll need to explain why your implementation
+is correct, test it's performance against the previous implementations, and
+add your findings to \texttt{README.md}.
+
+\paragraph{Errors.}
+
+You will need to check for errors for any \texttt{pthread\_mutex\_*} functions
+you use.
+You may simply \texttt{exit} with the proper error code.
+You are expected to properly destroy and locks you create.
+The given code passes \texttt{valgrind} with no memory leaks, you should not
+create any.
+
+\paragraph{Tips.}
+
+Since this is a lab about concurrency and parallelism, you may want to
+significantly increase the number of cores given to your virtual machine, or
+run your code on a Linux machine with more cores.
+
+\paragraph{Example output.}
+
+The \texttt{process.txt} file is the example from Lecture 7. You should be able
+run:
+
+\begin{lstlisting}
+> ./hash-table-tester -t 8 -s 50000
+Generation: 130,340 usec
+Hash table base: 1,581,974 usec
+  - 0 missing
+Hash table v1: 359,149 usec
+  - 28 missing
+Hash table v2: 396,051 usec
+  - 24 missing
+\end{lstlisting}
+
+\paragraph{Submission.}
+
+Simply push your code using \lstinline|git push origin main| (or simply
+\lstinline|git push|).
+For late days will we look at the timestamp on our server.
+We will never use your commit times as proof of submission, only when you
+push your code to the course Git server.
+
+\end{document}

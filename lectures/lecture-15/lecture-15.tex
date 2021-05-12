@@ -2,7 +2,7 @@
 
 \lecturenumber{15}
 \title{Locking}
-\version{1.0.0}
+\version{1.0.2}
 \author{Jon Eyolfson}
 \date{May 11, 2021}
 
@@ -184,9 +184,9 @@ void* run(void* arg) {
 
 int main(int argc, char *argv[])
 {
+  !\structure{sem\_init(\&sem, 0, 1);}!
   // Create 8 threads
   // Join 8 threads
-  !\structure{sem\_init(\&sem, 0, 1);}!
   printf("counter = %i\n", counter);
 }
     \end{lstlisting}
@@ -395,11 +395,11 @@ pthread_cond_t has_empty;
 void producer() {
   // produce data
   pthread_mutex_lock(&mutex);
-  // fill a slot
   if (nfilled == N) {
     pthread_cond_wait(&has_empty,
                       &mutex);
   }
+  // fill a slot
   ++nfilled;
   pthread_cond_signal(&has_filled);
   pthread_mutex_unlock(&mutex);
@@ -410,11 +410,12 @@ void producer() {
         \begin{lstlisting}
 void consumer() {
   pthread_mutex_lock(&mutex);
-  // empty a slot
   if (nfilled == 0) {
     pthread_cond_wait(&has_filled,
                       &mutex);
   }
+  // empty a slot
+  --nfilled;
   pthread_cond_signal(&has_empty);
   pthread_mutex_unlock(&mutex);
   // consume data
@@ -488,7 +489,7 @@ void consumer() {
     Conditions for deadlocking:
 
     \begin{enumerate}
-      \item Mutual Exclusion (of coruse for simple locks)
+      \item Mutual Exclusion (of course for simple locks)
       \item Hold and Wait (you have a lock and try to acquire another)
       \item No Preemption (we can't take simple locks away)
       \item Circular Wait (waiting for a lock held by another process)

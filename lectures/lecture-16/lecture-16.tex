@@ -1,0 +1,623 @@
+\input{../preamble.tex}
+
+\lecturenumber{16}
+\title{Memory Allocation}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{May 13, 2021}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Static Allocation is the Simplest Strategy}
+
+    Create a fixed size allocation in your program
+
+    \hspace{2em} e.g. \lstinline|char buffer[4096];|
+
+    \vspace{2em}
+
+    When the program loads, the kernel sets aside that memory
+    for you
+
+    \vspace{2em}
+
+    That memory exists as long as your process does, no need to free
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Dynamic Allocation is Often Required}
+
+    You may only conditionally require memory
+
+    \hspace{2em} Static allocations are sometimes wasteful
+
+    \vspace{2em}
+
+    You may not know the size of the allocation
+
+    \hspace{2em} Static allocations need to account for the maximum size
+
+    \vspace{2em}
+
+    Where do you allocate memory?
+
+    \hspace{2em} You can either allocate on the stack or on the heap
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Stack Allocation is Mostly Done for You in C}
+
+    Think of normal variables
+
+    \hspace{2em} e.g. \lstinline|int x;|
+
+    \vspace{2em}
+
+    The compiler internally inserts \lstinline|alloca| calls
+
+    \hspace{2em} e.g. \lstinline|int *px = (int*) alloca(4);|
+
+    \vspace{2em}
+
+    Whenever the function that called \lstinline|alloca| returns, it
+    frees all the memory
+
+    \hspace{2em} This just restores the previous stack pointer
+
+    \vspace{2em}
+
+    This won't work if you try to use the memory after returning
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{You've Used Dynamic Allocation Before}
+
+    These are the \lstinline|malloc| family of functions
+
+    \vspace{2em}
+
+    The most flexible way to use memory, but is also the most difficult to get
+    right
+
+    \vspace{2em}
+
+    You have to properly handle your memory lifetimes, and \lstinline|free|
+    exactly once
+
+    \vspace{2em}
+
+    Also, there's a new concern --- fragmentation
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Fragmentation is a Unique Issue for Dynamic Allocation}
+
+    You allocate memory in different sized contiguous blocks
+
+    \hspace{2em} Compaction is not possible and every allocation decision is
+    permanent
+
+    \vspace{2em}
+
+    A fragment is a small contiguous block of memory that cannot handle an allocation
+
+    \hspace{2em} You can think of it as a ``hole'' in memory, wasting space
+
+    \vspace{2em}
+
+    There are 3 requirements for fragmentation
+    \begin{enumerate}
+        \item Different allocation lifetimes
+        \item Different allocation sizes
+        \item Inability to relocate previous allocations  
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}{There's Internal and External Fragmentation}
+
+    External fragmentation occurs when you allocate different sized blocks
+
+    \hspace{2em} There's no room for an allocation between the blocks
+
+    \begin{center}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+      \node[draw,rectangle,minimum width=50,minimum height=30,fill=red]
+        (a0) {};
+      \node[draw,rectangle,minimum width=30,minimum height=30]
+        (a1) [right=of a0] {};
+      \node[draw,rectangle,minimum width=20,minimum height=30,fill=red]
+        (a2) [right=of a1] {};
+      \node[draw,rectangle,minimum width=60,minimum height=30]
+        (a3) [right=of a2] {};
+    \end{tikzpicture}
+    \end{center}
+
+    Internal fragmentation occurs when you allocate fixed sized blocks
+
+    \hspace{2em} There's wasted space within a block
+
+    \begin{center}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+      \node[draw,rectangle,minimum width=50,minimum height=20,fill=red]
+        (a0) {};
+      \node[draw,rectangle,minimum width=30,minimum height=20,fill=black]
+        (a1) [right=of a0] {};
+      \node[draw,rectangle,minimum width=20,minimum height=20,fill=red]
+        (a2) [right=of a1] {};
+      \node[draw,rectangle,minimum width=60,minimum height=20,fill=black]
+        (a3) [right=of a2] {};
+      \node[draw,rectangle,minimum width=80,minimum height=30,xshift=15,yshift=25]
+        [below=of a0] {};
+      \node[draw,rectangle,minimum width=80,minimum height=30,xshift=30,yshift=25]
+        [below=of a2] {};
+    \end{tikzpicture}
+    \end{center}
+
+    \begin{flushright}
+      Credit: \href{https://git.scc.kit.edu/uurqi/os-tutorium}{Daniel Ritz}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Want to Minimize Fragmentation}
+
+    Fragmentation is just wasted space, which we should prevent
+
+    \vspace{2em}
+
+    We want to reduce the number of ``holes'' between blocks of memory
+
+    \hspace{2em} If we have holes, we'd like to keep them as large as possible
+
+    \vspace{2em}
+
+    Our goal is to keep allocating memory without wasting space
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Allocator Implementations Usually Use a Free List}
+
+    They keep track of free blocks of memory by chaining them together
+
+    \hspace{2em} Implemented with a linked list
+
+    \vspace{2em}
+
+    We need to be able to handle a request of any size
+
+    \vspace{2em}
+
+    For allocation, we choose a block large enough for the request
+
+    \hspace{2em} Remove it from the free list
+
+    \vspace{2em}
+
+    For deallocation, we add the block back to the free list
+
+    \hspace{2em} If it's adjacent to another free block, we can merge them
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{There are 3 General Heap Allocation Strategies}
+
+    Best fit: choose the smallest block that can satisfy the request
+
+    \hspace{2em} Needs to search through the whole list (unless there's an
+    exact match)
+
+    \vspace{2em}
+
+    Worst fit: choose largest block (most leftover space)
+
+    \hspace{2em} Also has to search through the list
+
+    \vspace{2em}
+    
+    First fit: choose first block that can satisfy request
+  \end{frame}
+
+  \begin{frame}{Allocating Using Best Fit (1)}
+
+    Note that blocks with a blank background and a number are free
+
+    \vspace{2em}
+
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+      \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]
+        (a0) {};
+      \node[draw,rectangle,minimum width=100,minimum height=20]    (a1)  [right=of a0]      {100};
+      \node[draw,rectangle,minimum width=120,minimum height=20,fill=solarizedblue]    (a2) [right=of a1]       {};
+      \node[draw,rectangle,minimum width=60,minimum height=20]    (a3)    [right=of a2]    {60};
+
+      \node[draw,rectangle,minimum width=40,minimum height=20,yshift=-20,fill=solarizedgreen]
+        [below=of a0] {40};
+    \end{tikzpicture}
+
+    Where do we allocate this block?
+  \end{frame}
+
+  \begin{frame}{Allocating Using Best Fit (2)}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+            
+      \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (a0)        {};
+      \node[draw,rectangle,minimum width=100,minimum height=20]    (a1)  [right=of a0]      {100};
+      \node[draw,rectangle,minimum width=120,minimum height=20,fill=solarizedblue]    (a2) [right=of a1]       {};
+      \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedgreen]    (a3)    [right=of a2]    {};
+      \node[draw,rectangle,minimum width=20,minimum height=20]    (a4)    [right=of a3]    {20};
+
+      \node[draw,rectangle,minimum width=60,minimum height=20,yshift=-20,xshift=10,fill=solarizedpurple] [below=of a0] {60};
+
+    \end{tikzpicture}
+
+    Where do we allocate this block?
+  \end{frame}
+
+  \begin{frame}{Allocating Using Best Fit (3)}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+      \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (a0)        {};
+      \node[draw,rectangle,minimum width=60,minimum height=20,fill=solarizedpurple]    (a1)  [right=of a0]      {};
+      \node[draw,rectangle,minimum width=40,minimum height=20]    (a2)  [right=of a1]      {40};
+      \node[draw,rectangle,minimum width=120,minimum height=20,fill=solarizedblue]    (a3) [right=of a2]       {};
+      \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedgreen]    (a4)    [right=of a3]    {};
+      \node[draw,rectangle,minimum width=20,minimum height=20]    (a5)    [right=of a4]    {20};
+
+      \node[draw,rectangle,minimum width=60,minimum height=20,yshift=-20,xshift=10,fill=solarizedmagenta] [below=of a0] {60};
+    \end{tikzpicture}
+
+    The next block does not fit anywhere
+  \end{frame}
+
+  \begin{frame}{Allocating Using Worst Fit (1)}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (a0)        {};
+        \node[draw,rectangle,minimum width=100,minimum height=20]    (a1)  [right=of a0]      {100};
+        \node[draw,rectangle,minimum width=120,minimum height=20,fill=solarizedblue]    (a2) [right=of a1]       {};
+        \node[draw,rectangle,minimum width=60,minimum height=20]    (a3)    [right=of a2]    {60};
+
+        \node[draw,rectangle,minimum width=40,minimum height=20,yshift=-20,fill=solarizedgreen] [below=of a0] {40};
+    \end{tikzpicture}
+
+    Where do we allocate this block?
+  \end{frame}
+
+  \begin{frame}{Allocating Using Worst Fit (2)}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (a0)        {};
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedgreen]    (a1)  [right=of a0]      {};
+        \node[draw,rectangle,minimum width=60,minimum height=20]    (a2)    [right=of a1]    {60};
+        \node[draw,rectangle,minimum width=120,minimum height=20,fill=solarizedblue]    (a3) [right=of a2]       {};
+        \node[draw,rectangle,minimum width=60,minimum height=20]    (a4)    [right=of a3]    {60};
+
+        \node[draw,rectangle,minimum width=60,minimum height=20,yshift=-20,xshift=10,fill=solarizedpurple] [below=of a0] {60};
+    \end{tikzpicture}
+
+    Where do we allocate this block?
+  \end{frame}
+
+  \begin{frame}{Allocating Using Worst Fit (3)}
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (a0)        {};
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedgreen]    (a1)  [right=of a0]      {};
+        \node[draw,rectangle,minimum width=60,minimum height=20,fill=solarizedpurple]    (a2)    [right=of a1]    {};
+        \node[draw,rectangle,minimum width=120,minimum height=20,fill=solarizedblue]    (a3) [right=of a2]       {};
+        \node[draw,rectangle,minimum width=60,minimum height=20]    (a4)    [right=of a3]    {60};
+
+        \node[draw,rectangle,minimum width=60,minimum height=20,yshift=-20,xshift=10,fill=solarizedmagenta] [below=of a0] {60};
+    \end{tikzpicture}
+
+    Next block fits exactly in remaining space
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Best Fit and Worst Fit are Both Slow}
+
+    Best fit: tends to leave very large holes and very small holes
+
+    \hspace{2em} Small holes may be useless
+
+    \vspace{2em}
+
+    Worst fit: simulation says it's the worst in terms of storage utilization
+
+    \vspace{2em}
+
+    First fit: tends to leave ``average'' size holes
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The Buddy Allocator Restricts the Problem}
+
+    Typically allocation requests are of size $\mathsf{2^n}$
+
+    \hspace{2em} e.g. 2, 4, 8, 16, 32, ..., 4096, ...
+
+    \vspace{2em}
+
+    Restrict allocations to be powers of 2 to enable a more efficient
+    implementation
+
+    \hspace{2em} Split blocks into 2 until you can handle the request
+
+    \vspace{2em}
+
+    We want to be able to do fast searching and merging
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{You Can Implement the Buddy Allocator Using Multiple Lists}
+    
+
+    We restrict the requests to be $\mathsf{2^k, 0 \leq k \leq N}$ (round up if needed)
+
+    \vspace{2em}
+
+    Our implementation would use $\mathsf{N+1}$ free lists of blocks for each
+    size
+
+    \hspace{2em}
+
+    For a request of size $\mathsf{2^k}$, we search the free list until we find
+    a big enough block
+
+    \hspace{2em} Search $\mathsf{k, k+1, k+2, ...}$ until we find one
+
+    \hspace{4em} Recursively divide the block if needed until it's the correct size
+
+    \hspace{6em} Insert “buddy” blocks into free lists
+
+    \vspace{2em}
+
+    For deallocations, we coalesce the buddy blocks back together
+
+    \hspace{2em} Recursively coalesce the blocks if needed
+  \end{frame}
+
+  \begin{frame}{Using the Buddy Allocator (1)}
+
+    \begin{tikzpicture}[node distance=5mm and 0mm]
+            
+        \node[draw,rectangle,minimum width=280,minimum height=20,fill=black,text=white]    (a00)        {256};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white,xshift=-70]    (a10) [below=of a00]       {128};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white]    (a11) [right=of a10]       {128};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=black,text=white,xshift=-35]    (a20) [below=of a10]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20]    (a21) [right=of a20]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=solarizedblue,xshift=-35]    (a22) [below=of a11]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20]    (a23) [right=of a22]       {64};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedred,xshift=-17]    (a30) [below=of a20]       {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20]    (a31) [right=of a30]       {32};
+
+        \draw[->] (a00.south) -- (a10.north);
+        \draw[->] (a00.south) -- (a11.north);
+        \draw[->] (a10.south) -- (a20.north);
+        \draw[->] (a10.south) -- (a21.north);
+        \draw[->] (a11.south) -- (a22.north);
+        \draw[->] (a11.south) -- (a23.north);
+        \draw[->] (a20.south) -- (a30.north);
+        \draw[->] (a20.south) -- (a31.north);
+
+    \end{tikzpicture}
+
+    \vspace{2em}
+
+    Where do we allocate a request of size 28?
+  \end{frame}
+
+  \begin{frame}{Using the Buddy Allocator (2)}
+
+    \begin{tikzpicture}[node distance=5mm and 0mm]
+            
+        \node[draw,rectangle,minimum width=280,minimum height=20,fill=black,text=white]    (a00)        {256};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white,xshift=-70]    (a10) [below=of a00]       {128};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white]    (a11) [right=of a10]       {128};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=black,text=white,xshift=-35]    (a20) [below=of a10]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20]    (a21) [right=of a20]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=solarizedblue,xshift=-35]    (a22) [below=of a11]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20]    (a23) [right=of a22]       {64};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedred,xshift=-17]    (a30) [below=of a20]       {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedgreen]    (a31) [right=of a30]       {32};
+
+        \draw[->] (a00.south) -- (a10.north);
+        \draw[->] (a00.south) -- (a11.north);
+        \draw[->] (a10.south) -- (a20.north);
+        \draw[->] (a10.south) -- (a21.north);
+        \draw[->] (a11.south) -- (a22.north);
+        \draw[->] (a11.south) -- (a23.north);
+        \draw[->] (a20.south) -- (a30.north);
+        \draw[->] (a20.south) -- (a31.north);
+
+    \end{tikzpicture}
+
+    \vspace{2em}
+
+    Where do we allocate a request of size 32?
+  \end{frame}
+
+  \begin{frame}{Using the Buddy Allocator (3)}
+
+    \begin{tikzpicture}[node distance=5mm and 0mm]
+            
+        \node[draw,rectangle,minimum width=280,minimum height=20,fill=black,text=white]    (a00)        {256};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white,xshift=-70]    (a10) [below=of a00]       {128};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white]    (a11) [right=of a10]       {128};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=black,text=white,xshift=-35]    (a20) [below=of a10]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=black,text=white]    (a21) [right=of a20]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=solarizedblue,xshift=-35]    (a22) [below=of a11]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20]    (a23) [right=of a22]       {64};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedred,xshift=-17]    (a30) [below=of a20]       {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedgreen]    (a31) [right=of a30]  {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedpurple,xshift=-17]    (a32) [below=of a21]       {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,]    (a33) [right=of a32]       {32};
+
+        \draw[->] (a00.south) -- (a10.north);
+        \draw[->] (a00.south) -- (a11.north);
+        \draw[->] (a10.south) -- (a20.north);
+        \draw[->] (a10.south) -- (a21.north);
+        \draw[->] (a11.south) -- (a22.north);
+        \draw[->] (a11.south) -- (a23.north);
+        \draw[->] (a20.south) -- (a30.north);
+        \draw[->] (a20.south) -- (a31.north);
+        \draw[->] (a21.south) -- (a32.north);
+        \draw[->] (a21.south) -- (a33.north);
+
+    \end{tikzpicture}
+
+    \vspace{2em}
+
+    What happens when the we free the size 64 block?
+\end{frame}
+
+
+  \begin{frame}{Using the Buddy Allocator (4)}
+
+    \begin{tikzpicture}[node distance=5mm and 0mm]
+            
+        \node[draw,rectangle,minimum width=280,minimum height=20,fill=black,text=white]    (a00)        {256};
+        \node[draw,rectangle,minimum width=140,minimum height=20,fill=black,text=white,xshift=-70]    (a10) [below=of a00]       {128};
+        \node[draw,rectangle,minimum width=140,minimum height=20]    (a11) [right=of a10]       {128};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=black,text=white,xshift=-35]    (a20) [below=of a10]       {64};
+        \node[draw,rectangle,minimum width=70,minimum height=20,fill=black,text=white]    (a21) [right=of a20]       {64};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedred,xshift=-17]    (a30) [below=of a20]       {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedgreen]    (a31) [right=of a30]  {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,fill=solarizedpurple,xshift=-17]    (a32) [below=of a21]       {32};
+        \node[draw,rectangle,minimum width=35,minimum height=20,]    (a33) [right=of a32]       {32};
+
+        \draw[->] (a00.south) -- (a10.north);
+        \draw[->] (a00.south) -- (a11.north);
+        \draw[->] (a10.south) -- (a20.north);
+        \draw[->] (a10.south) -- (a21.north);
+        \draw[->] (a20.south) -- (a30.north);
+        \draw[->] (a20.south) -- (a31.north);
+        \draw[->] (a21.south) -- (a32.north);
+        \draw[->] (a21.south) -- (a33.north);
+
+    \end{tikzpicture}
+
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Buddy Allocators are Used in Linux}
+
+
+    Advantages
+
+    \hspace{2em} Fast and simple compared to general dynamic memory allocation
+
+    \hspace{2em} Avoids external fragmentation by keeping free physical pages contiguous
+
+    \vspace{2em}
+
+    Disadvantages
+
+    \hspace{2em} There's always internal fragmentation
+
+    \hspace{4em} We always round up the allocation size if it's not a power of 2
+  \end{frame}
+
+  \begin{frame}{Slab Allocators Take Advantage of Fixed Size Allocations}
+
+  Allocate objects of same size from a dedicated pool
+
+  \hspace{2em} All structures of the same type are the same size
+
+  \vspace{2em}
+
+  Every object type has it's own pool with blocks of the correct size
+
+    \hspace{2em} This prevents internal fragmentation
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Slab is a Cache of ``Slots''}
+
+    Each allocation size has a corresponding slab of slots (one slot holds one
+    allocation)
+
+    \vspace{2em}
+
+    Instead of a linked list, we can use a bitmap (there's a mapping between
+    bit and slot)
+
+    \hspace{2em} For allocations we set the bit and return the slot
+
+    \hspace{2em} For deallocations we just clear the bit
+
+    \vspace{2em}
+
+    The slab an be implemented on top of the buddy allocator
+  \end{frame}
+
+  \begin{frame}{Each Slab Can Be Allocated using the Buddy Allocator}
+    
+    Consider two object sizes: A and B
+
+    \vspace{2em}
+    
+    \begin{tikzpicture}[node distance=0mm and 0mm]
+
+        \node[draw,rectangle,minimum width=20,minimum height=20,fill=solarizedred]    (a0)        {};
+        \node[draw,rectangle,minimum width=20,minimum height=20]    (a1)     [right=of a0]   {};
+        \node[draw,rectangle,minimum width=20,minimum height=20]    (a2)     [right=of a1]   {};
+        \node[draw,rectangle,minimum width=20,minimum height=20,fill=solarizedred]    (a3)     [right=of a2]   {};
+        \node[draw,rectangle,minimum width=8,minimum height=20,fill=black]    (a4)     [right=of a3]   {};
+
+        \node[draw,rectangle,minimum width=20,minimum height=20]    (a5)     [right=of a4]   {};
+        \node[draw,rectangle,minimum width=20,minimum height=20]    (a6)     [right=of a5]   {};
+        \node[draw,rectangle,minimum width=20,minimum height=20]    (a7)     [right=of a6]   {};
+        \node[draw,rectangle,minimum width=20,minimum height=20]    (a8)     [right=of a7]   {};
+        \node[draw,rectangle,minimum width=8,minimum height=20,fill=black]    (a9)     [right=of a8]   {};
+
+
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (b1)     [right=of a9]   {};
+        \node[draw,rectangle,minimum width=40,minimum height=20,fill=solarizedred]    (b2)     [right=of b1]   {};
+
+        \node[draw,rectangle,minimum width=40,minimum height=20]    (b3)     [right=of b2]   {};
+        \node[draw,rectangle,minimum width=40,minimum height=20]    (b4)     [right=of b3]   {};
+
+        \node[draw,rectangle,minimum width=90,minimum height=20,xshift=35]    (s0)    [below=of a0]   {Slab A1};
+        \node[draw,rectangle,minimum width=90,minimum height=20]    (s1)    [right=of s0]   {Slab A2};
+        \node[draw,rectangle,minimum width=80,minimum height=20]    (s2)    [right=of s1]   {Slab B1};
+        \node[draw,rectangle,minimum width=80,minimum height=20]    (s3)    [right=of s2]   {Slab B2};
+
+    \end{tikzpicture}
+
+    \vspace{2em}
+
+    We can reduce internal fragmentation if Slabs are located
+    adjacently
+
+    \hspace{2em} In this example A has internal fragmentation (dark box)
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The Kernel Has To Implement It's Own Memory Allocations}
+
+    The concepts are the same for user space memory allocation
+
+    (the kernel just gives them more contiguous virtual memory pages):
+
+    \begin{itemize}
+      \item There's static and dynamic allocations
+      \item For dynamic allocations, fragmentation is a big concern
+      \item Dynamic allocation returns blocks of memory
+        \begin{itemize}
+          \item Fragmentation between blocks is external
+          \item Fragmentation within a blocks is internal
+        \end{itemize}
+      \item There's 3 general allocation strategies for different sized
+            allocations
+        \begin{itemize}
+          \item Best fit
+          \item Worst fit
+          \item First fit
+        \end{itemize}
+      \item Buddy allocator is a real world restricted implementation
+      \item Slab allocator takes advantage of fixed sized objects to reduce
+            fragmentation
+    \end{itemize}
+  \end{frame}
+\end{document}

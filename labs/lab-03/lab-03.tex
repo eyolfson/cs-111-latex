@@ -2,7 +2,7 @@
 
 \labnumber{3}
 \title{Hash Hash Hash}
-\version{1.0.0}
+\version{1.0.2}
 \author{Jon Eyolfson}
 \date{May 10, 2021}
 \duedate{May 21, 2021 at 8 PM PST}
@@ -88,7 +88,7 @@ Create a \textbf{single} mutex, only for \texttt{v1}, and make
 \texttt{hash\_table\_v1\_add\_entry} thread safe by adding the proper locking
 calls.
 Remember, you should only modify code in \texttt{hash-table-v1.c}.
-You'll have to explain why your implementation is corrected in your
+You'll have to explain why your implementation is correct in your
 \texttt{README.md}.
 You should test it versus the base hash table implementation and also add your
 findings to \texttt{README.md}.
@@ -102,12 +102,18 @@ Similar to the first version, you'll need to explain why your implementation
 is correct, test it's performance against the previous implementations, and
 add your findings to \texttt{README.md}.
 
+In both cases you may add fields to any hash table \texttt{struct}: the hash
+table, \texttt{hash\_table\_entry}, or \texttt{list\_entry}. You code changes
+should not modify \texttt{contains} or \texttt{get\_value}. Any other code
+modifications are okay. However, you should not change any functionality of the
+hash tables.
+
 \paragraph{Errors.}
 
 You will need to check for errors for any \texttt{pthread\_mutex\_*} functions
 you use.
 You may simply \texttt{exit} with the proper error code.
-You are expected to properly destroy and locks you create.
+You are expected to destroy any locks you create.
 The given code passes \texttt{valgrind} with no memory leaks, you should not
 create any.
 

@@ -1,0 +1,285 @@
+\input{../preamble.tex}
+
+\lecturenumber{22}
+\title{Course Recap}
+\version{1.0.0}
+\author{Jon Eyolfson}
+\date{June 1, 2021}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{There are 4 Major Concepts in This Course}
+
+    You'll learn how the following applies to operating systems:
+
+    \begin{itemize}
+      \item Virtualization
+      \item Concurrency
+      \item Persistence
+      \item Security (out of scope, somewhat touched on in Virtual Machines)
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Kernel Interfaces Operate Between CPU Mode Boundaries}
+
+    The lessons from the lecture:
+    \begin{itemize}
+      \item Code running in kernel mode is part of your kernel
+      \item Different kernel architectures shift how much code runs in kernel mode
+      \item System calls are the interface between user and kernel mode
+      \item Everything involved to define a simple ``Hello world'' (in 178 bytes)
+      \begin{itemize}
+        \item Difference between API and ABI
+        \item How to explore system calls
+      \end{itemize}
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Operating Systems Provide the Foundation for Libraries}
+
+    We learned:
+    \begin{itemize}
+      \item Dynamic libraries and a comparison to static libraries
+      \begin{itemize}
+        \item How to manipulate the dynamic loader
+      \end{itemize}
+      \item Example of issues from ABI changes without API changes
+      \item Standard file descriptor conventions for UNIX
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The Operating System Creates and Runs Processes}
+
+    The operating system has to:
+    \begin{itemize}
+      \item Loads a program, and create a process with context
+      \item Maintain process control blocks, including state
+      \item Switch between running processes using a context switch
+      \item Unix kernels start an \texttt{init} process
+      \item Unix processes have to maintain a parent and child relationship
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Used System Calls to Create Processes}
+
+    You should be comfortable with:
+    \begin{itemize}
+      \item \texttt{execve}
+      \item \texttt{fork}
+      \item \texttt{wait}
+    \end{itemize}
+
+    \vspace{2em}
+
+    This includes understanding processes and their relationships
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Explored Basic IPC in an Operating System}
+
+    Some basic IPC includes:
+    \begin{itemize}
+      \item \texttt{read} and \texttt{write} through file descriptors (could be a regular file)
+      \item Redirecting file descriptors for communcation
+      \item Pipes (which you'll explore)
+      \item Signals
+      \item Shared Memory
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Scheduling Involves Trade-Offs}
+
+    We looked at few different algorithms:
+    \begin{itemize}
+      \item First Come First Served (FCFS) is the most basic scheduling algorithm
+      \item Shortest Job First (SJF) is a tweak that reduces waiting time
+      \item Shortest Remaining Time First (SRTF) uses SJF ideas with preemptions
+      \item SRTF optimizes lowest waiting time (or turnaround time)
+      \item Round-robin (RR) optimizes fairness and response time
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Scheduling Gets Even More Complex}
+
+    There are more solutions, and more issues:
+    \begin{itemize}
+      \item Introducing priority also introduces priority inversion
+      \item Some processes need good interactivity, others not so much
+      \item Multiprocessors may require per-CPU queues
+      \item Real-time requires predictability
+      \item Completely Fair Scheduler (CFS) tries to model the ideal fairness
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Page Tables Translate Virtual to Physical Addresses}
+
+    The MMU is the hardware that uses page tables, which may:
+    \begin{itemize}
+      \item Be a single large table (wasteful, even for 32-bit machines)
+      \item Be a multi-level to save space for sparse allocations
+      \item Use the kernel allocate pages from a free list
+      \item Use a TLB to speed up memory accesses
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Page Replacement Algorithms Aim to Reduce Page Faults}
+
+    We saw the following:
+    \begin{itemize}
+      \item Optimal (good for comparison but not realistic)
+      \item Random (actually works surprisingly well, avoids the worst case)
+      \item FIFO (easy to implement but Bélády's anomaly)
+      \item LRU (gets close to optimal but expensive to implement)
+      \item Clock (a decent approximation of LRU)
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Both Processes and (Kernel) Threads Enable Parallelization}
+
+    We explored threads, and related them to something we already know (processes)
+    \begin{itemize}
+      \item Threads are lighter weight, and share memory by default
+      \item Each process can have multiple (kernel) threads
+      \item Most implementations use one-to-one user-to-kernel thread mapping
+      \item The operating system has to manage what happens during a fork, or signals
+      \item We now have synchronization issues
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Want Critical Sections to Protect Against Data Races}
+
+    We should know what data races are, and how to prevent them:
+    \begin{itemize}
+      \item Mutex or spinlocks are the most straightforward locks
+      \item We need hardware support to implement locks
+      \item We need some kernel support for wake up notifications
+      \item If we know we have a lot of readers, we should use a read-write lock
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{We Explored More Advanced Locking}
+
+    Before we did mutual exclusion, now we can ensure order
+
+    \begin{itemize}
+      \item Semaphores are an atomic value that can be used for signaling
+      \item Condition variables are clearer for complex condition signaling
+      \item Locking granularity matters, you'll find out in Lab 3
+      \item You must prevent deadlocks
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The Kernel Has To Implement It's Own Memory Allocations}
+
+    The concepts are the same for user space memory allocation
+
+    (the kernel just gives them more contiguous virtual memory pages):
+
+    \begin{itemize}
+      \item There's static and dynamic allocations
+      \item For dynamic allocations, fragmentation is a big concern
+      \item Dynamic allocation returns blocks of memory
+        \begin{itemize}
+          \item Fragmentation between blocks is external
+          \item Fragmentation within a blocks is internal
+        \end{itemize}
+      \item There's 3 general allocation strategies for different sized
+            allocations
+        \begin{itemize}
+          \item Best fit
+          \item Worst fit
+          \item First fit
+        \end{itemize}
+      \item Buddy allocator is a real world restricted implementation
+      \item Slab allocator takes advantage of fixed sized objects to reduce
+            fragmentation
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{Disks Enable Persistence}
+
+    We explored two kinds of disks: SSDs and HDDs
+    \begin{itemize}
+      \item Magnetic disks have poor random access (need to be scheduled)
+      \item Shortest Positioning Time First (SPTF) is the best scheduling for throughput
+      \item SSDs are more like RAM except accessed in pages and blocks
+      \item SSDs also need to work with the OS for best performance (TRIM)
+      \item Use RAID to tolerate failures and improve performance using multiple disks
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{Filesystems Enable Persistence}
+    They describe how files are stored on disks:
+    \begin{itemize}
+      \item API-wise you can open files, and change the position to read/write
+            at
+      \item Each process has a local open file and there's a global open file
+            table
+      \item There's multiple allocation strategies: contiguous, linked, FAT, indexed
+      \item Linux uses a hybrid inode approach
+      \item Everything is a file on UNIX, names in a directory can be hard or soft links
+      
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{Sockets are IPC Across Physical Machines}
+
+    We can now create servers and clients, but there's much more to learn!
+
+       \hspace{2em} There's networking and distributed systems courses
+
+    \vspace{2em}
+
+    However, today we learned the basics:
+
+    \begin{itemize}
+      \item Sockets require an address (e.g. local and IPv4/IPv6)
+      \item There are two types of sockets: stream and datagram
+      \item Servers need to bind to an address, listen, and accept connections
+      \item Clients need to connect to an address
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{Virtual Machines Virtualize a Physical Machine}
+
+    They allow multiple operating systems to share the same hardware
+    \begin{itemize}
+      \item Virtual machines provide isolation, the hypervisor allocates
+            resources
+      \item Type 2 hypervisors are slower due to trap-and-emulate and binary
+            translation
+      \item Type 1 hypervisors are supported by hardware, IOMMU speeds up devices
+      \item Hypervisors may overcommit resources and need to physically move VM
+      \item Containers aim to have the benefits of VMs, without the overhead
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{Next Lecture We'll Go Over Example Final Questions}
+
+    Take the extra time to wrap up Lab 4!
+
+    \begin{itemize}
+      \item Everything is valid to put on the final
+      \item Same idea as the midterm, just 50\% larger
+      \item June 8th, 24 hour window
+      \item I'll post the 2020 final on Discord for you to go over
+      \item Bring questions for the last lecture!
+    \end{itemize}
+  \end{frame}
+\end{document}

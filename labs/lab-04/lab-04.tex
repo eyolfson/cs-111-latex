@@ -2,7 +2,7 @@
 
 \labnumber{4}
 \title{Hey! I'm Filing Here}
-\version{1.0.0}
+\version{1.0.5}
 \author{Jon Eyolfson}
 \date{May 24, 2021}
 \duedate{June 4, 2021 at 8 PM PST}
@@ -25,8 +25,8 @@ After, when you run \texttt{ls -ain mnt/} you should get the following
 total 7
        2 drwxr-xr-x 3    0    0 1024 .
          drwxr-xr-x 3                ..
-      13 lrw-r--r-- 1 1000    0   11 hello -> hello-world
-      12 -rw-r--r-- 1 1000    0   12 hello-world
+      13 lrw-r--r-- 1 1000 1000   11 hello -> hello-world
+      12 -rw-r--r-- 1 1000 1000   12 hello-world
       11 drwxr-xr-x 2    0    0 1024 lost+found
 \end{lstlisting}
 
@@ -89,14 +89,14 @@ named \texttt{hello} which points to \texttt{hello-world}.
 You are provided with the inode for \lstinline|lost+found| along with its
 directory block.
 The root directory and the \lstinline|lost+found| should be owned by uid 0
-and gui 0 (root).
+and gid 0 (root).
 The owner should have read, write, and execute permissions.
 The group and other should have read and execute permissions.
 The \lstinline|hello-world| file and \lstinline|hello| symlink should be
-owned by uid 1000 and gid 1000 (typically the number of the first ``normaal''
+owned by uid 1000 and gid 1000 (typically the number of the first ``normal''
 user).
 The owner should have read and write permissions.
-The group and other should only have red permission.
+The group and other should only have read permission.
 Your \lstinline|hello-world| file should only be 12 bytes long and contain
 ``Hello world'' followed by a newline.
 
@@ -129,8 +129,8 @@ make # compile the executable
 dumpe2fs cs111-base.img # dumps the filesystem information to help debug
 fsck.ext2 cs111-base.img # this will check that your filesystem is correct
 mkdir mnt # create a directory to mnt your filesystem to
-sudo mount -o loop test.img mnt  # mount your filesystem, loop let's you use a file
-sudo umount mnt # unmount the filesystem when you're down
+sudo mount -o loop cs111-base.img mnt  # mount your filesystem, loop lets you use a file
+sudo umount mnt # unmount the filesystem when you're done
 rmdir mnt # delete the directory used for mounting when you're done
 \end{lstlisting}
 
@@ -151,7 +151,7 @@ push your code to the course Git server.
 
 \paragraph{Example output of \lstinline|dumpe2fs cs111-base.img|.}
 
-Note that your output my by slightly different. You should understand these
+Note that your output may by slightly different. You should understand these
 values and use macros that make sense, and not just hard code them.
 However, you should get something like:
 

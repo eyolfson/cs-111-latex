@@ -2,9 +2,9 @@
 
 \lecturenumber{6}
 \title{Basic IPC}
-\version{1.0.0}
+\version{2.0.0}
 \author{Jon Eyolfson}
-\date{April 8, 2021}
+\date{July 8, 2021}
 
 \begin{document}
   \begin{frame}[plain, noframenumbering]
@@ -126,6 +126,10 @@
   \begin{frame}
     \frametitle{Piping in Your Shell Connects Two Processes Together}
 
+    See: \texttt{examples/lecture-06/pipe-example.c} and \texttt{man 2 pipe}
+
+    \vspace{2em}
+
     In \texttt{./p1 | ./p2} the shell connects:
     \texttt{p1}'s \texttt{stdout} to \texttt{p2}'s \texttt{stdin}
 
@@ -139,6 +143,10 @@
     \vspace{2em}
 
     This forms a one-way communication channel
+
+    \vspace{2em}
+
+    What happens if you leave the write end open?
   \end{frame}
 
   \begin{frame}

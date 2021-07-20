@@ -1,10 +1,10 @@
 \input{../preamble.tex}
 
-\lecturenumber{11}
+\lecturenumber{9}
 \title{Page Replacement}
-\version{1.0.1}
+\version{2.0.0}
 \author{Jon Eyolfson}
-\date{April 22, 2021}
+\date{July 20, 2021}
 
 \tikzset{swapin/.style args = {(#1,#2)}{%
     row #1 column #2/.style={nodes={text=red}}}}
@@ -14,12 +14,29 @@
     \titlepage
   \end{frame}
 
-  \begin{frame}
-    \frametitle{Background: As You Go Down Capacity Increases, but Speed Decreases}
+  \begin{frame}{Computer Memory Hierarchy is a Trade-off of Capacity and Speed}
+    \begin{tikzpicture}[shorten >=0pt]
+      \coordinate (A) at (-5,0) {};
+      \coordinate (B) at ( 5,0) {};
+      \coordinate (C) at (0,7) {};
+      \draw[name path=AC] (A) -- (C);
+      \draw[name path=BC] (B) -- (C);
+      \foreach \y/\A in {
+        0/Tape Drives,
+        1/Hard Disk Drive (HDD),
+        2/SATA Solid State Disk (SSD),
+        3/Non-Volatile Memory (NVMe),
+        4/Memory (RAM),
+        5/CPU Cache,
+        6/CPU
+      } {
+        \draw ($(A)!\y/7!(C)$) -- ($(B)!\y/7!(C)$)
+          node[midway,above] {\A};
+      }
 
-    \begin{center}
-      \includegraphics[scale=0.175]{ComputerMemoryHierarchy.png}
-    \end{center}
+      \draw [->, very thick] (-3,6) -- (-3,4) node[midway, left] {Capacity};
+      \draw [->, very thick] (3,4) -- (3,6) node[midway, right] {Speed (and price)};
+    \end{tikzpicture}
   \end{frame}
 
   \begin{frame}
@@ -438,11 +455,16 @@
     \end{itemize}
 
     \vspace{2em}
+
     Algorithm, to insert a new page:
     \begin{itemize}
       \item Check the hand's reference bit, if it's 0 then place the page and advance hand
       \item If the reference bit is 1, set it to 0, advance the hand, and repeat
     \end{itemize}
+
+    \vspace{2em}
+
+    For page accesses, set the reference bit to 1
   \end{frame}
 
   \begin{frame}[fragile]
@@ -450,7 +472,7 @@
 
     Assume our physical memory can only hold 4 pages, and we access the following:
 
-    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+    \hspace{2em} 1 2 3 4 5 2 3 1 2 3 (all of the pages are initially on disk)
 
     \begin{center}
       \begin{tikzpicture}
@@ -466,15 +488,13 @@
           column 3/.style={visible on=<4->},
           column 4/.style={visible on=<5->},
           column 5/.style={visible on=<6->},
-          column 6/.style={visible on=<7->},
-          column 7/.style={visible on=<8->},
-          column 8/.style={visible on=<14->},
-          column 9/.style={visible on=<15->},
-          column 10/.style={visible on=<16->},
-          column 11/.style={visible on=<17->},
-          column 12/.style={visible on=<22->},
+          column 6/.style={visible on=<11->},
+          column 7/.style={visible on=<12->},
+          column 8/.style={visible on=<13->},
+          column 9/.style={visible on=<16->},
+          column 10/.style={visible on=<17->},
         ] {
-          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
+          1 & 2 & 3 & 4 & 5 & 2 & 3 & 1 & 2 & 3 \\
         };
       \end{tikzpicture}
 
@@ -495,40 +515,32 @@
         \node (c) at (0, 0) {};
 
         \node<1> [above=of c, box] (n) {0 \nodepart{second} 0};
-        \node<2-8> [above=of c, box] {1 \nodepart{second} 1};
-        \node<9-12> [above=of c, box] {1 \nodepart{second} 0};
-        \node<13-16> [above=of c, box] {5 \nodepart{second} 1};
-        \node<17-20> [above=of c, box] {5 \nodepart{second} 0};
-        \node<21-> [above=of c, box] {4 \nodepart{second} 1};
+        \node<2-5> [above=of c, box] {1 \nodepart{second} 1};
+        \node<6-9> [above=of c, box] {1 \nodepart{second} 0};
+        \node<10-> [above=of c, box] {5 \nodepart{second} 1};
 
         \node<1-2> [right=of c, box] (e) {0 \nodepart{second} 0};
-        \node<3-> [right=of c, box] {2 \nodepart{second} 1};
-        \node<10-13> [right=of c, box] {2 \nodepart{second} 0};
-        \node<14-17> [right=of c, box] {1 \nodepart{second} 1};
-        \node<18-21> [right=of c, box] {1 \nodepart{second} 0};
-        \node<22-> [right=of c, box] {5 \nodepart{second} 1};
+        \node<3-6,11-12,16-> [right=of c, box] {2 \nodepart{second} 1};
+        \node<7-10,13-15> [right=of c, box] {2 \nodepart{second} 0};
 
         \node<1-3> [below=of c, box] (s) {0 \nodepart{second} 0};
-        \node<4-> [below=of c, box] {3 \nodepart{second} 1};
-        \node<11-14> [below=of c, box] {3 \nodepart{second} 0};
-        \node<15-18> [below=of c, box] {2 \nodepart{second} 1};
-        \node<19-> [below=of c, box] {2 \nodepart{second} 0};
+        \node<4-7,12-13,17-> [below=of c, box] {3 \nodepart{second} 1};
+        \node<8-11,14-16> [below=of c, box] {3 \nodepart{second} 0};
 
         \node<1-4> [left=of c, box] (w) {0 \nodepart{second} 0};
-        \node<5-> [left=of c, box] (w) {4 \nodepart{second} 1};
-        \node<12-15> [left=of c, box] (w) {4 \nodepart{second} 0};
-        \node<16-19> [left=of c, box] (w) {3 \nodepart{second} 1};
-        \node<20-> [left=of c, box] (w) {3 \nodepart{second} 0};
+        \node<5-8> [left=of c, box] (w) {4 \nodepart{second} 1};
+        \node<9-14> [left=of c, box] (w) {4 \nodepart{second} 0};
+        \node<15-> [left=of c, box] (w) {1 \nodepart{second} 1};
 
         \path [->] (n) edge [bend left] (e)
                    (e) edge [bend left] (s)
                    (s) edge [bend left] (w)
                    (w) edge [bend left] (n);
 
-        \path<1,5-8,12,16,20> [->] (c) edge (n);
-        \path<2,9,13,17,21> [->] (c) edge (e);
-        \path<3,10,14,18,22-> [->] (c) edge (s);
-        \path<4,11,15,19> [->] (c) edge (w);
+        \path<1,5,9,15-> [->] (c) edge (n);
+        \path<2,6,10-12> [->] (c) edge (e);
+        \path<3,7,13> [->] (c) edge (s);
+        \path<4,8,14> [->] (c) edge (w);
 
       \end{tikzpicture}
     \end{center}
@@ -539,7 +551,7 @@
 
     Assume our physical memory can only hold 4 pages, and we access the following:
 
-    \hspace{2em} 1 2 3 4 1 2 5 1 2 3 4 5 (all of the pages are initially on disk)
+    \hspace{2em} 1 2 3 4 5 2 3 1 2 3 (all of the pages are initially on disk)
 
     \begin{center}
       \begin{tikzpicture}[
@@ -553,12 +565,8 @@
           (3,2),
           (4,3),
           (5,4),
-          (2,7),
-          (3,8),
-          (4,9),
-          (5,10),
-          (2,11),
-          (3,12)
+          (2,5),
+          (5,8)
         },
       ]
         \matrix (m) [
@@ -574,14 +582,12 @@
           column 8/.style={visible on=<8->},
           column 9/.style={visible on=<9->},
           column 10/.style={visible on=<10->},
-          column 11/.style={visible on=<11->},
-          column 12/.style={visible on=<12->},
         ] {
-          1 & 2 & 3 & 4 & 1 & 2 & 5 & 1 & 2 & 3 & 4 & 5 \\
-          1 & 1 & 1 & 1 & 1 & 1 & 5 & 5 & 5 & 5 & 4 & 4 \\
-            & 2 & 2 & 2 & 2 & 2 & 2 & 1 & 1 & 1 & 1 & 5 \\
-            &   & 3 & 3 & 3 & 3 & 3 & 3 & 2 & 2 & 2 & 2 \\
-            &   &   & 4 & 4 & 4 & 4 & 4 & 4 & 3 & 3 & 3 \\
+          1 & 2 & 3 & 4 & 5 & 2 & 3 & 1 & 2 & 3 \\
+          1 & 1 & 1 & 1 & 5 & 5 & 5 & 5 & 5 & 5 \\
+            & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 \\
+            &   & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 \\
+            &   &   & 4 & 4 & 4 & 4 & 1 & 1 & 1 \\
         };
         \draw (m-2-1.north west) rectangle (m-5-1.south east);
         \draw (m-2-2.north west) rectangle (m-5-2.south east);
@@ -593,35 +599,28 @@
         \draw (m-2-8.north west) rectangle (m-5-8.south east);
         \draw (m-2-9.north west) rectangle (m-5-9.south east);
         \draw (m-2-10.north west) rectangle (m-5-10.south east);
-        \draw (m-2-11.north west) rectangle (m-5-11.south east);
-        \draw (m-2-12.north west) rectangle (m-5-12.south east);
       \end{tikzpicture}
     \end{center}
 
     \begin{flushright}
-      \onslide<13->{10 page faults}
+      \onslide<11->{6 page faults}
     \end{flushright}
   \end{frame}
 
   \begin{frame}
-    \frametitle{Swapping to Disk is Less Important Now}
+    \frametitle{For Performance You May Choose to Disable Swapping}
 
     Memory is cheap, and has quite high capacity
 
-    \hspace{2em} Some systems may not even have swap
+    \hspace{2em} You'd rather know you need more memory than run slowly
+
+    \hspace{4em} Linux runs an OOM (out of memory) killer, that SIGKILLs the memory hog
 
     \vspace{2em}
 
     Larger page sizes allow for speedup
 
     \hspace{2em} Trade more fragmentation for more TLB coverage
-
-    \vspace{2em}
-
-    With 64 bits we have a huge address space compared to memory capacity
-
-    \hspace{2em} Lots of room to use virtual addresses for other uses
-    (\texttt{mmap})
   \end{frame}
 
   \begin{frame}

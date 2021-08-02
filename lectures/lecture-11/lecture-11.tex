@@ -2,7 +2,7 @@
 
 \lecturenumber{11}
 \title{Locks}
-\version{2.0.0}
+\version{2.0.1}
 \author{Jon Eyolfson}
 \date{July 29, 2021}
 
@@ -66,7 +66,7 @@
   \end{frame}
 
   \begin{frame}[fragile]
-    \frametitle{\texttt{lecture-13/pthread-datarace.c} Data Race}
+    \frametitle{\texttt{lecture-10/pthread-datarace.c} Data Race}
 
     Instead of \texttt{count}, we'll look at \texttt{pcount} (the pointer to
     count, which is a global)
@@ -374,7 +374,6 @@ void lock(int *l) {
   while (compare_and_swap(l, 0, 1)) {
     yield();
   }
-  *l = 1;
 }
     \end{lstlisting}
 
@@ -402,7 +401,6 @@ void lock(int *l) {
     // add myself to the wait queue
     yield();
   }
-  *l = 1;
 }
 void unlock(int *l) {
   *l = 0;
@@ -425,7 +423,6 @@ void lock(int *l) {
     // add myself to the wait queue
     yield();
   }
-  *l = 1;
 }
 void unlock(int *l) {
   *l = 0;
@@ -452,7 +449,6 @@ void lock(int *l) {
     // add myself to the wait queue
     yield();
   }
-  *l = 1;
 }
 void unlock(int *l) {
   *l = 0;

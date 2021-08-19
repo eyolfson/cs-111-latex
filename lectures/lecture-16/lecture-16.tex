@@ -1,0 +1,443 @@
+\input{../preamble.tex}
+
+\lecturenumber{16}
+\title{Distributed Systems}
+\version{2.0.2}
+\author{Jon Eyolfson}
+\date{August 17, 2021}
+
+\begin{document}
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+
+  \begin{frame}{Sockets are Another Form of IPC}
+
+    We've seen pipes, shared memory, and signals
+
+    \vspace{2em}
+
+    These forms of IPC assume that the processes are on the same physical
+    machine
+
+    \vspace{2em}
+
+    Sockets enable IPC between physical machines, typically over the network
+  \end{frame}
+
+  \begin{frame}{Servers Follow 4 Steps to Use Sockets}
+
+    These are all system calls, and have the usual C wrappers:
+
+    \vspace{2em}
+
+    \begin{enumerate}
+      \item \texttt{socket}
+
+        \hspace{2em} Create the socket
+      \item \texttt{bind}
+
+        \hspace{2em} Attach the socket to some location (a file, IP:port, etc.)
+      \item \texttt{listen}
+
+        \hspace{2em} Indicate you're accepting connections, and set the queue limit
+      \item \texttt{accept}
+
+        \hspace{2em} Return the next incoming connection for you to handle
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}{Clients Follow 2 Steps to Use Sockets}
+
+    Clients have a much easier time, they use one socket per connection
+
+    \vspace{2em}
+
+    \begin{enumerate}
+      \item \texttt{socket}
+
+        \hspace{2em} Create the socket
+      \item \texttt{connect}
+
+        \hspace{2em} Connect to some location, the socket can now send/receive
+                     data
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}{The \texttt{socket} System Call Sets the Protocol and Type of Socket}
+
+    \lstinline|int socket(int domain, int type, int protocol);|
+
+    \vspace{2em}
+
+    \texttt{domain} is the general protocol, further specified with \texttt{protocol} (mostly unused)
+
+    \hspace{2em} \texttt{AF\_UNIX} is for local communication (on the same physical machine)
+
+    \hspace{2em} \texttt{AF\_INET} is for IPv4 protocol using your network interface
+
+    \hspace{2em} \texttt{AF\_INET6} is for IPv6 protocol using your network interface
+
+    \vspace{2em}
+
+    \texttt{type} is (usually) one of two options: stream or datagram sockets
+  \end{frame}
+
+  \begin{frame}{Stream Sockets Use TCP}
+    All data sent by a client appears in the same order on the server
+
+    \vspace{2em}
+
+    Forms a persistent connection between client and server
+
+    \vspace{2em}
+
+    Reliable, but may be slow
+  \end{frame}
+
+  \begin{frame}{Datagram Sockets Use UDP}
+    Sends messages between the client and server
+
+    \vspace{2em}
+
+    No persistent connection between client and server
+
+    \vspace{2em}
+
+    Fast but messages may be reordered, or dropped
+  \end{frame}
+
+  \begin{frame}{The \texttt{bind} System Call Sets a Socket to an Address}
+    \lstinline|int bind(int socket, const struct sockaddr *address,|
+
+    \hspace{4.4em} \lstinline|socklen_t address_len);|
+
+    \vspace{2em}
+
+    \texttt{socket} is the file descriptor returned from the \texttt{socket}
+    system call
+
+    \vspace{2em}
+
+    There's different \lstinline|sockaddr| structures for different protocols
+
+    \hspace{2em} \lstinline|struct sockaddr_un| for local communcation (just a path)
+
+    \hspace{2em} \lstinline|struct sockaddr_in| for IPv4, a IPv4 address
+                 (e.g. 8.8.8.8)
+
+    \hspace{2em} \lstinline|struct sockaddr_in6| for IPv6, a IPv6 address
+                 (e.g. \lstinline|2001:4860:4860::8888|)
+  \end{frame}
+
+  \begin{frame}{The \texttt{listen} System Call Sets Queue Limits for Incoming
+                Connections}
+    \lstinline|int listen(int socket, int backlog);|
+
+    \vspace{2em}
+
+    \texttt{socket} is still the file descriptor returned from the
+    \texttt{socket} system call
+    
+    \vspace{2em}
+
+    \texttt{backlog} is the limit of the outstanding (not accepted) connections
+
+    \hspace{2em} The kernel manages this queue, and if full will not allow new connections
+
+    \vspace{2em}
+
+    We'll set this to \lstinline|0| to use the default kernel queue size
+  \end{frame}
+
+  \begin{frame}{The \texttt{accept} System Call Blocks Until There's a Connection}
+    \lstinline|int accept(int socket, struct sockaddr *restrict address,|
+
+    \hspace{5.4em} \lstinline|socklen_t *restrict address_len);|
+
+    \vspace{2em}
+
+    \texttt{socket} is \textit{still} the file descriptor returned from the
+    \texttt{socket} system call
+
+    \vspace{2em}
+
+    \texttt{address} and \texttt{address\_len} are locations to write the
+    connecting address
+
+    \hspace{2em} Acts as an optional return value, set both to \texttt{NULL} to
+                 ignore
+
+    \vspace{2em}
+
+    This returns a new file descriptor, we can \texttt{read} or \texttt{write}
+    to as usual
+  \end{frame}
+
+  \begin{frame}{The \texttt{connect} System Call Allows a Client to Connect to
+                an Address}
+
+    \lstinline|int connect(int sockfd, const struct sockaddr *addr,|
+                   
+    \hspace{5.9em} \lstinline|socklen_t addrlen);|
+
+    \vspace{2em}
+
+    \texttt{sockfd} is the file descriptor returned by the \texttt{socket}
+    system call
+
+    \hspace{2em} The client would need to be using the same protocol and type
+    as the server
+
+    \vspace{2em}
+
+    \texttt{addr} and \texttt{addrlen} is the address to connect to, exactly
+    like \texttt{bind}
+
+    \vspace{2em}
+
+    If this call succeeds then \texttt{sockfd} is may be used as a normal
+    file descriptor
+  \end{frame}
+
+  \begin{frame}{Our Example Server Sends ``Hello there!'' to Every Client and
+                Disconnects}
+
+    Please see \texttt{examples/lecture-16} in your \texttt{cs111} repository
+
+    \hspace{2em} Relevant source files: \texttt{client.c} and \texttt{server.c}
+
+    \vspace{2em}
+
+    We use a local socket just for demonstration, but you could use IPv4 or IPv6
+
+    \hspace{2em} We use \texttt{example.sock} in the current directory as our
+                 socket address
+
+    \vspace{2em}
+
+    Our server uses signals to clean up and terminate from our infinite
+    \texttt{accept} loop
+  \end{frame}
+
+  \begin{frame}{Instead of \texttt{read}/\texttt{write} There's Also
+                \texttt{send}/\texttt{recv} System Calls}
+
+    These system calls are basically the same thing, except they have
+    \texttt{flags}
+
+    \vspace{2em}
+
+    Some examples are:
+
+    \hspace{2em} \texttt{MSG\_OOB} --- Send/receive out-of-band data
+
+    \hspace{2em} \texttt{MSG\_PEEK} --- Look at data without reading
+
+    \hspace{2em} \texttt{MSG\_DONTROUTE} --- Send data without routing packets
+
+    \vspace{2em}
+
+    Except for maybe \texttt{MSG\_PEEK}, you do not need to know these
+
+    \vspace{2em}
+
+    \texttt{sento}/\texttt{recvfrom} take an additional address
+
+    \hspace{2em} The kernel ignores the address for stream sockets (there's a
+                 connection)
+  \end{frame}
+
+  \begin{frame}{Sockets Form a Basis For Distributed Systems}
+
+    You can use a remote procedure call (RPC) to run a function on another
+    machine
+
+    \hspace{2em} We send a request to a server, it executes and sends a reply
+                 back
+
+    \vspace{2em}
+
+    RPC can be done asynchronously, your process sends a request and doesn't
+    block
+
+    \hspace{2em} You can continue working in other threads to keep the process
+                 running
+
+    \vspace{2em}
+
+    Easy to program, looks like a normal function running on a server
+
+    \hspace{2em} Details are hidden, converting data to bytes to send (wire
+                 format)
+  \end{frame}
+
+  \begin{frame}{A RPC Can Fail in More Ways than a Regular Call}
+
+    Maybe a lost packet, interrupted connection, a slow or unresponsive server
+
+    \vspace{2em}
+
+    We don't know what happened on the server:
+
+    \begin{itemize}
+      \item It never saw the request
+      \item It crashed while executing the request (or just after)
+      \item It executed the request, but there was a network error during the
+            reply
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{``Best Effort'' RPC Scheme Retries Multiple Times}
+
+    It sends a request, and if there's no response within a timeout, resend 
+
+    \hspace{2em} Try resending a set number of times before giving up and
+                 returning an error
+
+    \vspace{2em}
+
+    What if the function increments a variable on the server?
+
+    \hspace{2em} The server could receive the packet after the timeout period
+
+    \hspace{4em} The client resends it and a single call increments twice (or more)!
+  \end{frame}
+
+  \begin{frame}{An ``At Most Once'' Scheme is Better}
+
+    The client includes a unique ID with each request
+
+    \hspace{2em} If there's duplicate requests, send the previous reply
+
+    \vspace{2em}
+
+    This is particular useful if the function is not idempotent
+    
+    \hspace{2em} Idempotent means one or more calls have the same effect
+
+    \vspace{2em}
+
+    You may want something like ``exactly once'', and that's complex (another
+    course)
+  \end{frame}
+
+  \begin{frame}{File Systems Can Be Networked as Well}
+
+    For example: NFS is a protocol designed to appear as a file system
+
+    \hspace{2em} However, the data is on a server accessed over the network
+
+    \vspace{2em}
+
+    A server accessed using protocols like NFS is called a NAS
+
+    \hspace{2em} NAS stands for Network-attached storage
+
+    \vspace{2em}
+
+    A NAS is typically a single server with a large RAID array
+  \end{frame}
+
+  \begin{frame}{You Could Distribute the File System Across Multiple Servers}
+
+    Google File System (GFS) is an example of a distributed file systems
+
+    \vspace{2em}
+
+    It breaks files up into fixed-sized 64 MB chunks and replicates it
+    (e.g. 3 times)
+
+    \hspace{2em} Each chunk gets an immutable and unique identifier
+
+    \vspace{2em}
+
+    A single server manages the file to chunk mappings
+
+    \hspace{2em} Clients then access the chunk servers directly
+  \end{frame}
+
+  \begin{frame}{GFS Architecture}
+    \begin{center}
+      \includesvg[height=7cm]{gfs.svg}
+    \end{center}
+  \end{frame}
+
+  \begin{frame}{GFS Uses Weak Consistency to Scale}
+
+    What about consistency? What if two clients modify a file using
+    different servers?
+
+    \hspace{2em} Ideally we'd like the same result as if it was a single server
+
+    \vspace{2em}
+
+    The single server ensures file namespace mutations are atomic
+
+    \hspace{2em} All the metadata is atomic
+
+    \vspace{2em}
+
+    For ``record appends'' (data) is appended ``at least once''
+
+    \hspace{2em} It's up to clients to detect duplicates
+
+    \vspace{2em}
+
+    This system is tailored for large Google scale files
+    
+    \hspace{2em} We won't go into all the details (there's a SOSP paper if you're
+    interested)
+  \end{frame}
+
+  \begin{frame}{You Can Distribute Other Tasks Too}
+
+    One machine can only handle so many connections
+
+    \hspace{2em} One machine only has so much bandwidth
+
+    \vspace{2em}
+
+    You can have multiple web servers all serving the same content
+
+    \hspace{2em} You can use a load balancer as your websites entry point
+
+    \hspace{4em} A loader balancer selects the server with the lowest load
+  \end{frame}
+
+  \begin{frame}{There Are Limits, Sometimes People Maliciously Overload Systems}
+
+    A denial-of-service attack occurs when you flood a target with bogus
+    requests
+
+    \hspace{2em} Sometimes the requests look legitimate, and are hard to detect
+
+    \vspace{2em}
+
+    A distributed denial-of-service (DDoS) occurs from multiple sources
+
+    \hspace{2em} It's even harder to block, often backed by a botnet
+  \end{frame}
+
+  \begin{frame}{Distributed Systems Start with Sockets}
+
+    There's networking and distributed systems courses!
+
+    \vspace{2em}
+
+    However, today we learned the basics:
+
+    \begin{itemize}
+      \item Sockets are IPC across physical machines
+        \begin{itemize}
+          \item Sockets require an address (e.g. local and IPv4/IPv6)
+          \item There are two types of sockets: stream and datagram
+          \item Servers need to bind to an address, listen, and accept connections
+          \item Clients need to connect to an address
+        \end{itemize}
+      \item Networked file systems (NFS)
+      \item Distributed file systems (GFS)
+      \item Denial-of-service attacks are a unique concern
+    \end{itemize}
+  \end{frame}
+\end{document}

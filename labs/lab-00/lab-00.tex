@@ -2,10 +2,10 @@
 
 \labnumber{0}
 \title{A Kernel Seedling}
-\version{1.0.5}
+\version{2.0.1}
 \author{Jon Eyolfson}
-\date{March 29, 2021}
-\duedate{April 9, 2021}
+\date{June 25, 2021}
+\duedate{July 2, 2021 @ 8 PM PST}
 
 \begin{document}
 
@@ -22,14 +22,13 @@ to expose internal kernel information.
 \paragraph{Virtual machine setup.}
 
 After the setup you'll have a fully functioning Linux virtual machine.
-You'll also want to have a shared folder accessible on both the host and guest
-operating system to share files.
-You're free to edit your files with whatever you're comfortable with in
-whichever operating system you wish.
-You should only run your code on the virtual machine though.
+You're free to edit your files with whatever you're comfortable with.
+For example, you can install VSCode with: \texttt{sudo pacman -S code}.
+You may replace \texttt{code} with \texttt{emacs} or \texttt{vim} as well.
+You should only run your code on the virtual machine.
 
 \begin{enumerate}
-  \item Download and Install VirtualBox:
+  \item Download and install VirtualBox:
         \url{https://www.virtualbox.org/wiki/Downloads}
   \item Download our virtual machine:
         \url{https://laforge.cs.ucla.edu/cs111/media/cs111/vm.ova}
@@ -38,19 +37,6 @@ You should only run your code on the virtual machine though.
       \item \textit{File} $\rightarrow$ \textit{Import Appliance}
       \item Choose \lstinline|vm.ova| from your local file system
       \item \textit{Next} $\rightarrow$ \textit{Import}
-    \end{enumerate}
-  \item Create a folder called \textit{Shared} somewhere on your machine
-  \item Add the \textit{Shared} folder to the virtual machine
-    \begin{enumerate}
-      \item Right click \textit{CS 111} from the left panel and hit settings
-      \item Click on \textit{Shared Folders} on the left panel
-      \item Right click in the right panel and select \textit{Add Shared Folder}
-      \item For \textit{Folder Path} select \textit{Other...} and select your
-            \textit{Shared} folder on your machine
-      \item Leave the \textit{Folder Name} as \textit{Shared}
-      \item Check \textit{Auto-mount}
-      \item Press \textit{OK}
-      \item Press \textit{OK}
     \end{enumerate}
   \item Select \textit{CS 111} from the left panel and click \textit{Start} at
         the top of the right panel
@@ -64,7 +50,6 @@ Run all these commands in your home directory (or anywhere really) on your
 virtual machine.
 First, open a terminal by going to \textit{Activities} and selecting the
 \textit{Terminal} icon on the left.
-Your \textit{Shared} directory is mounted at \lstinline|/media/sf_Shared|.
 If you're unfamiliar with Git, please check out the
 \href{https://git-scm.com/book/en/v2/}{Pro Git} book.
 For any of the commands, run them in the terminal.
@@ -94,11 +79,11 @@ For any of the commands, run them in the terminal.
     \end{enumerate}
   
   \item Run: \lstinline|cd ~|
-  \item Run: \lstinline|git clone git@laforge.cs.ucla.edu:spring21/username/cs111|
+  \item Run: \lstinline|git clone git@laforge.cs.ucla.edu:summer21/USERNAME/cs111|
 
-        (replace username with your username)
+        (replace \texttt{USERNAME} with your username)
   \item Run: \lstinline|cd cs111|
-  \item Run: \lstinline|git remote add upstream git@laforge.cs.ucla.edu:spring21/jon/cs111|
+  \item Run: \lstinline|git remote add upstream git@laforge.cs.ucla.edu:summer21/jon/cs111|
 \end{enumerate}
 
 \paragraph{Lab Setup.}
@@ -185,9 +170,13 @@ The breakdown is as follows:
 \paragraph{Submission.}
 
 Simply push your code using \lstinline|git push origin main| (or simply
-\lstinline|git push|).
-For late days will we look at the timestamp on our server.
-We will never use your commit times as proof of submission, only when you
-push your code to the course Git server.
+\lstinline|git push|) to submit it.
+Of course, you'll have to create a commit for your work (make sure you use
+\texttt{git add} and \texttt{git commit}).
+You may push as many commits as you want, your latest commit that modifies
+the lab files counts as your submission.
+For late days we will look at the timestamp on our server.
+We will never use your commit times (or file access times) as proof of
+submission, only when you push your code to the course Git server.
 
 \end{document}

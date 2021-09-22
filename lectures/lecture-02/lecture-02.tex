@@ -2,9 +2,9 @@
 
 \lecturenumber{2}
 \title{Interfaces}
-\version{1.0.2}
+\version{2.0.0}
 \author{Jon Eyolfson}
-\date{April 1, 2021}
+\date{June 24, 2021}
 
 \begin{document}
 
@@ -489,6 +489,27 @@ exit_group(0)                           = ?
     made
   \end{frame}
 
+  \begin{frame}
+    \frametitle{You Can Think of the Kernel as a Long Running Process}
+
+    Writing kernel code is more like writing library code (there's no \texttt{main})
+
+    \vspace{2em}
+
+    The kernel lets you load code (called modules)
+
+    \vspace{2em}
+
+    Your code executes on-demand
+
+    \hspace{2em} e.g. when it's loaded, or accessing a certain file
+
+    \vspace{2em}
+
+    Remember, your kernel module can execute privileged instructions
+
+    \hspace{2em} and access any kernel data, so you could do anything
+  \end{frame}
 
   \begin{frame}
     \frametitle{Kernel Interfaces Operate Between CPU Mode Boundaries}
@@ -497,12 +518,15 @@ exit_group(0)                           = ?
     \begin{itemize}
       \item Code running in kernel mode is part of your kernel
       \item Different kernel architectures shift how much code runs in kernel mode
-      \item System calls is the interface between user and kernel mode
-      \item Everything involved to define a simple ``Hello world'' (in 178 bytes)
-      \begin{itemize}
-        \item Difference between API and ABI
-        \item How to explore system calls
-      \end{itemize}
+      \item System calls are the interface between user and kernel mode
+        \begin{itemize}
+          \item Every program must use this interface!
+        \end{itemize}
+      \item File format and instructions to define a simple ``Hello world'' (in 178 bytes)
+        \begin{itemize}
+          \item Difference between API and ABI
+          \item How to explore system calls
+        \end{itemize}
     \end{itemize}
   \end{frame}
 

@@ -2,10 +2,10 @@
 
 \labnumber{0}
 \title{A Kernel Seedling}
-\version{2.0.1}
+\version{3.0.0}
 \author{Jon Eyolfson}
-\date{June 25, 2021}
-\duedate{July 2, 2021 @ 8 PM PST}
+\date{September 29, 2021}
+\duedate{October 6, 2021 @ 11:59 PM PT}
 
 \begin{document}
 
@@ -28,7 +28,7 @@ You may replace \texttt{code} with \texttt{emacs} or \texttt{vim} as well.
 You should only run your code on the virtual machine.
 
 \begin{enumerate}
-  \item Download and install VirtualBox:
+  \item Download and install VirtualBox 6.1.26:
         \url{https://www.virtualbox.org/wiki/Downloads}
   \item Download our virtual machine:
         \url{https://laforge.cs.ucla.edu/cs111/media/cs111/vm.ova}
@@ -79,18 +79,18 @@ For any of the commands, run them in the terminal.
     \end{enumerate}
   
   \item Run: \lstinline|cd ~|
-  \item Run: \lstinline|git clone git@laforge.cs.ucla.edu:summer21/USERNAME/cs111|
+  \item Run: \lstinline|git clone git@laforge.cs.ucla.edu:fall21/USERNAME/cs111|
 
         (replace \texttt{USERNAME} with your username)
   \item Run: \lstinline|cd cs111|
-  \item Run: \lstinline|git remote add upstream git@laforge.cs.ucla.edu:summer21/jon/cs111|
+  \item Run: \lstinline|git remote add upstream git@laforge.cs.ucla.edu:fall21/jon/cs111|
 \end{enumerate}
 
 \paragraph{Lab Setup.}
 Ensure you're in the repository (\lstinline|cd ~/cs111|) directory.
 Make sure you have the latest skeleton code from us by running:
 \lstinline|git pull upstream main|.
-You can finally run: \lstinline|cd lab-00| to begin the lab.
+You can finally run: \lstinline|cd lab0| to begin the lab.
 
 \paragraph{Your task.}
 
@@ -100,7 +100,7 @@ The process table runs within kernel mode, so to access it you'll need to write
 a kernel module that runs in kernel mode.
 For your submission you'll modify \lstinline|proc_count.c|, and only this file,
 for the coding part.
-In the \lstinline|lab-00| directory we should be able to run the following
+In the \lstinline|lab0| directory we should be able to run the following
 commands:
 
 \begin{lstlisting}[xleftmargin=2em]
@@ -113,7 +113,7 @@ cat /proc/count
 The last command should report a single integer representing the number of
 processes (or tasks) running on the machine.
 Your final task is to fill in your documentation in the \lstinline|README.md|
-for \lstinline|lab-00|.
+for \lstinline|lab0|.
 
 \paragraph{Tips.}
 
@@ -159,6 +159,19 @@ Remove your module from the kernel (so you can insert a new one) with
 
 Sanity check your module information with \lstinline|modinfo proc_count.ko|
 
+\paragraph{Testing.}
+
+There are a set of basic test cases given to you.
+For this lab the provided test cases are likely the ones we'll use for grading.
+In the future we'll withhold more advancded tests which we'll use for grading.
+Part of programming is coming up with tests yourself.
+To run the provided test cases please run the following command in your lab
+directory:
+
+\begin{lstlisting}[xleftmargin=2em]
+python -m unittest
+\end{lstlisting}
+
 \paragraph{Grading.}
 
 The breakdown is as follows:
@@ -171,12 +184,22 @@ The breakdown is as follows:
 
 Simply push your code using \lstinline|git push origin main| (or simply
 \lstinline|git push|) to submit it.
-Of course, you'll have to create a commit for your work (make sure you use
-\texttt{git add} and \texttt{git commit}).
+\textit{You need to create your own commits to push, you can use as many
+as you'd like.}
+You'll need to use the \texttt{git add} and \texttt{git commit} commands.
 You may push as many commits as you want, your latest commit that modifies
 the lab files counts as your submission.
 For late days we will look at the timestamp on our server.
 We will never use your commit times (or file access times) as proof of
 submission, only when you push your code to the course Git server.
+
+We've created a new system for the fall quarter that double checks you
+have the latest upstream code and have submitted something.
+Please check
+\url{https://laforge.cs.ucla.edu/cs111/grades/}
+to see your status.
+You're expected to properly merge in upstream code without rebasing.
+Note that the website only updates your lab modification status
+if you've merged the latest code.
 
 \end{document}

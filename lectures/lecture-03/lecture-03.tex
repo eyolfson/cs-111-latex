@@ -2,9 +2,9 @@
 
 \lecturenumber{3}
 \title{Libraries}
-\version{1.1.0}
+\version{3.0.0}
 \author{Jon Eyolfson}
-\date{April 1, 2021}
+\date{September 30, 2021}
 
 \begin{document}
   \begin{frame}[plain, noframenumbering]
@@ -148,6 +148,41 @@ int main(int argc, char **argv) {
   \end{frame}
 
   \begin{frame}
+    \frametitle{Static Libraries Are Included At Link Time}
+    \begin{tikzpicture}[shorten >=3pt]
+      \node[draw, align=left] (util-obj)
+           {\texttt{util.o}};
+      \node[draw, align=left, below=of util-obj, yshift=1em] (foo-obj)
+           {\texttt{foo.o}};
+      \node[draw, align=left, below=of foo-obj, yshift=1em] (bar-obj)
+           {\texttt{bar.o}};
+
+      \node[draw, align=left, right=of util-obj, xshift=6em] (static)
+           {\texttt{lib.a}};
+
+      \draw[->] (util-obj) -- node [above] {\small Archive} (static);
+      \draw[->] (foo-obj) -- (static);
+      \draw[->] (bar-obj) -- (static);
+    \end{tikzpicture}
+
+    \begin{flushright}
+    \begin{tikzpicture}[>=stealth', shorten >=2pt]
+
+      \node[draw, align=left] (main-obj)
+           {\texttt{main.o}};
+      \node[draw, align=left, below=of main-obj, yshift=1em] (static)
+           {\texttt{lib.a}};
+
+      \node[draw, align=left, right=of main-obj, xshift=6em] (exec)
+           {\texttt{executable}};
+
+      \draw[->] (main-obj) -- node [above] {\small Linkage} (exec);
+      \draw[->] (static) -- (exec);
+    \end{tikzpicture}
+    \end{flushright}
+  \end{frame}
+
+  \begin{frame}
     \frametitle{Dynamic Libraries Are For Reusable Code}
 
     The C standard library is a dynamic library (\texttt{.so}), like any other
@@ -177,6 +212,43 @@ int main(int argc, char **argv) {
 
     \hspace{1em} The same physical page corresponds to different virtual pages
     in processes
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Dynamic Libraries Are Included At Runtime}
+
+    \begin{tikzpicture}[shorten >=3pt]
+      \node[draw, align=left] (util-obj)
+           {\texttt{util.o}};
+      \node[draw, align=left, below=of util-obj, yshift=1em] (foo-obj)
+           {\texttt{foo.o}};
+      \node[draw, align=left, below=of foo-obj, yshift=1em] (bar-obj)
+           {\texttt{bar.o}};
+
+      \node[draw, align=left, right=of util-obj, xshift=6em] (static)
+           {\texttt{lib.a}};
+
+      \draw[->] (util-obj) -- node [above] {\small Shared Linkage} (static);
+      \draw[->] (foo-obj) -- (static);
+      \draw[->] (bar-obj) -- (static);
+    \end{tikzpicture}
+
+    \begin{flushright}
+    \begin{tikzpicture}[>=stealth', shorten >=2pt]
+
+      \node[draw, align=left] (main-obj)
+           {\texttt{main.o}};
+
+      \node[draw, align=left, right=of main-obj, xshift=6em] (exec)
+           {\texttt{executable}};
+
+      \node[draw, align=left, below=of exec, yshift=1em] (dynamic)
+           {\texttt{lib.so}};
+
+      \draw[->] (main-obj) -- node [above] {\small Linkage} (exec);
+      \draw[->] (exec) -- node [right] {\small Linked at Runtime} (dynamic);
+    \end{tikzpicture}
+    \end{flushright}
   \end{frame}
 
   \begin{frame}
@@ -301,19 +373,18 @@ struct point {
     \frametitle{ABI Stable Code Should Always Print ``1, 2''}
 
     \begin{lstlisting}[basicstyle=\small\ttfamily]
-#include <stdlib.h>
-
-#include "libpoint.h"
-
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   struct point *p = point_create(1, 2);
-  printf("point (x, y) = %d, %d\n",
+
+  printf("point (x, y) = %d, %d (using library)\n",
          point_get_x(p), point_get_y(p));
 
-  int *point_abi = (int *) p;
-  printf("ABI v1: point (x, y) = %d, %d\n",
-         point_abi[1], point_abi[0]);
+  struct point_v1 *p_v1 = (struct point_v1 *) p;
+  printf("point (x, y) = %d, %d (using v1)\n", p_v1->x, p_v1->y);
+
+  struct point_v2 *p_v2 = (struct point_v2 *) p;
+  printf("point (x, y) = %d, %d (using v2)\n", p_v2->x, p_v2->y);
+
   point_destroy(p);
   return 0;
 }
@@ -332,7 +403,9 @@ int main(int argc, char **argv)
 
     Our code works correctly with either v1 or v2 of the library
 
-    \hspace{2em} With the stable ABI in \lstinline|libpoint.h|
+    \hspace{2em} The stable ABI is in \lstinline|libpoint.h| (it hides the \lstinline|struct|)
+
+    \hspace{4em} If you expose a \lstinline|struct| it becomes part of your ABI!
 
     \vspace{2em}
 
@@ -519,84 +592,6 @@ Call to free(0x55c12aa40260)
       \item Example of issues from ABI changes without API changes
       \item Standard file descriptor conventions for UNIX
     \end{itemize}
-  \end{frame}
-
-  \begin{frame}
-    \frametitle{Static Libraries Are Included At Link Time}
-    \begin{tikzpicture}[shorten >=3pt]
-      \node[draw, align=left] (foo-obj)
-           {\texttt{foo.o}};
-      \node[draw, align=left, below=of foo-obj, yshift=1em] (bar-obj)
-           {\texttt{bar.o}};
-      \node[draw, align=left, below=of bar-obj, yshift=1em] (baz-obj)
-           {\texttt{baz.o}};
-
-      \node[draw, align=left, right=of foo-obj, xshift=6em] (static)
-           {\texttt{lib.a}};
-
-      \draw[->] (foo-obj) -- node [above] {\small Archive} (static);
-      \draw[->] (bar-obj) -- (static);
-      \draw[->] (baz-obj) -- (static);
-    \end{tikzpicture}
-
-    \begin{flushright}
-    \begin{tikzpicture}[>=stealth', shorten >=2pt]
-
-      \node[draw, align=left] (main-obj)
-           {\texttt{main.o}};
-      \node[draw, align=left, below=of main-obj, yshift=1em] (util-obj)
-           {\texttt{util.o}};
-      \node[draw, align=left, below=of util-obj, yshift=1em] (static)
-           {\texttt{lib.a}};
-
-      \node[draw, align=left, right=of main-obj, xshift=6em] (exec)
-           {\texttt{executable}};
-
-      \draw[->] (main-obj) -- node [above] {\small Linkage} (exec);
-      \draw[->] (util-obj) -- (exec);
-      \draw[->] (static) -- (exec);
-    \end{tikzpicture}
-    \end{flushright}
-  \end{frame}
-
-  \begin{frame}
-    \frametitle{Dynamic Libraries Are Included At Runtime}
-
-    \begin{tikzpicture}[shorten >=3pt]
-      \node[draw, align=left] (foo-obj)
-           {\texttt{foo.o}};
-      \node[draw, align=left, below=of foo-obj, yshift=1em] (bar-obj)
-           {\texttt{bar.o}};
-      \node[draw, align=left, below=of bar-obj, yshift=1em] (baz-obj)
-           {\texttt{baz.o}};
-
-      \node[draw, align=left, right=of foo-obj, xshift=6em] (dynamic)
-           {\texttt{lib.so}};
-
-      \draw[->] (foo-obj) -- node [above] {\small Shared Linkage} (dynamic);
-      \draw[->] (bar-obj) -- (dynamic);
-      \draw[->] (baz-obj) -- (dynamic);
-    \end{tikzpicture}
-
-    \begin{flushright}
-    \begin{tikzpicture}[>=stealth', shorten >=2pt]
-
-      \node[draw, align=left] (main-obj)
-           {\texttt{main.o}};
-      \node[draw, align=left, below=of main-obj, yshift=1em] (util-obj)
-           {\texttt{util.o}};
-
-      \node[draw, align=left, right=of main-obj, xshift=6em] (exec)
-           {\texttt{executable}};
-
-      \node[draw, align=left, below=of exec, yshift=1em] (dynamic)
-           {\texttt{lib.so}};
-
-      \draw[->] (main-obj) -- node [above] {\small Linkage} (exec);
-      \draw[->] (util-obj) -- (exec);
-      \draw[->] (exec) -- node [right] {\small Linked at Runtime} (dynamic);
-    \end{tikzpicture}
-    \end{flushright}
   \end{frame}
 
 \end{document}

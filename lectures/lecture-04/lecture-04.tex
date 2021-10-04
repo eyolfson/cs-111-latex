@@ -2,9 +2,9 @@
 
 \lecturenumber{4}
 \title{Processes}
-\version{1.0.2}
+\version{3.0.0}
 \author{Jon Eyolfson}
-\date{April 6, 2021}
+\date{October 5, 2021}
 
 \begin{document}
   \begin{frame}[plain, noframenumbering]
@@ -373,6 +373,46 @@
       \item The child exits first (zombie process)
       \item The parent exits first (orphan process)
     \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Firefox Uses Two Processes Even with a Single CPU (Only One is Running)}
+
+    \begin{tikzpicture}[
+      every state/.style={ellipse, minimum width=1.25cm, minimum height=0.5cm, font=\scriptsize},
+    ]
+      \node [state, initial, background fill=uclablue!50,fill on=<1>] (created) {Created};
+      \node [state, right=of created, background fill=uclablue!50,fill on=<{2,4-6,8-10,12-14,16-17}>] (waiting) {Waiting};
+      \node [state, above right=of waiting, background fill=uclablue!50,fill on=<{3,7,11,15,18}>] (running) {Running};
+      \node [state, below right=of waiting] (blocked) {Blocked};
+      \node [state, accepting, below right=of running] (terminated) {Terminated};
+      \path [->] (created) edge (waiting)
+                 (waiting) edge [bend left] (running)
+                 (running) edge [bend left] (waiting)
+                 (running) edge (blocked)
+                 (blocked) edge (waiting)
+                 (running) edge (terminated);
+
+      \node <3> [node distance=0, anchor=west, right= of running] {Create tab};
+      \node <15> [node distance=0, anchor=west, right= of running] {Acknowledge pid \texttt{1338}};
+
+      \node [align=center, node distance=0, anchor=south, above=of created] {\bfseries Firefox Browser \\ \texttt{pid: 1337}};
+
+      \node <5-16> [state, initial, below left=of blocked, yshift=-1cm, background fill=uclablue!50,fill on=<5>] (created2) {Created};
+      \node <5-16> [state, right=of created2, background fill=uclablue!50,fill on=<{6-8,10-12}>] (waiting2) {Waiting};
+      \node <5-16> [state, above right=of waiting2, background fill=uclablue!50,fill on=<{9,13}>] (running2) {Running};
+      \node <5-16> [state, below right=of waiting2] (blocked2) {Blocked};
+      \node <5-16> [state, accepting, below right=of running2, background fill=uclablue!50,fill on=<{14-16}>] (terminated2) {Terminated};
+      \path <5-16> [->] (created2) edge (waiting2)
+                 (waiting2) edge [bend left] (running2)
+                 (running2) edge [bend left] (waiting2)
+                 (running2) edge (blocked2)
+                 (blocked2) edge (waiting2)
+                 (running2) edge (terminated2);
+
+      \node <5-16> [align=center, node distance=0, anchor=south, above=of created2] {\bfseries Firefox Tab \\ \texttt{pid: 1338, ppid: 1337}};
+
+    \end{tikzpicture}
   \end{frame}
 
   \begin{frame}

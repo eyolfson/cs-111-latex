@@ -2,10 +2,10 @@
 
 \labnumber{1}
 \title{Pipe Up}
-\version{2.0.0}
+\version{3.0.0}
 \author{Jon Eyolfson}
-\date{July 5, 2021}
-\duedate{July 16, 2021 at 8 PM PST}
+\date{October 6, 2021}
+\duedate{October 20, 2021 @ 11:59 PM PT}
 
 \begin{document}
 
@@ -37,14 +37,14 @@ You'll receieve all future labs through my repository (Lab 0 had you set it up
 as \texttt{upstream}).
 Run the following command to get the skeleton for Lab 1:
 \texttt{git pull upstream main}.
-You should be able to run \texttt{make} in the \texttt{lab-01} directory to
+You should be able to run \texttt{make} in the \texttt{lab1} directory to
 create a \texttt{pipe} executable, and then \texttt{make clean} to remove all
 binary files.
 
 \paragraph{Files to modify.}
 
 You should only be modifying \texttt{pipe.c} and \texttt{README.md} in the
-\texttt{lab-01} directory.
+\texttt{lab1} directory.
 
 \paragraph{Your task.}
 
@@ -61,6 +61,8 @@ You should be able to handle between 1 to at least 8 programs (more is okay).
 All standard errors should be the same as the parent's standard error.
 You do not need to handle passing additional command line arguments to every
 individual new process.
+All your processes should be a direct child of the original process that starts
+executing \texttt{main}.
 Finally, fill in your \texttt{README.md} so that you could use your program
 without having to use this document.
 
@@ -95,12 +97,39 @@ Makefile  pipe	pipe.c	pipe.o	README.md
 
 The last command should have the same output of: \texttt{ls | cat | wc}.
 
+\paragraph{Testing.}
+
+There are a set of basic test cases given to you (they'll be released a few
+days after the lab).
+We'll withhold more advanced tests which we'll use for grading.
+Part of programming is coming up with tests yourself.
+To run the provided test cases please run the following command in your lab
+directory:
+
+\begin{lstlisting}[xleftmargin=2em]
+python -m unittest
+\end{lstlisting}
+
 \paragraph{Submission.}
 
 Simply push your code using \lstinline|git push origin main| (or simply
-\lstinline|git push|).
-For late days will we look at the timestamp on our server.
-We will never use your commit times as proof of submission, only when you
-push your code to the course Git server.
+\lstinline|git push|) to submit it.
+\textit{You need to create your own commits to push, you can use as many
+as you'd like.}
+You'll need to use the \texttt{git add} and \texttt{git commit} commands.
+You may push as many commits as you want, your latest commit that modifies
+the lab files counts as your submission.
+For late days we will look at the timestamp on our server.
+We will never use your commit times (or file access times) as proof of
+submission, only when you push your code to the course Git server.
+
+We've created a new system for the fall quarter that double checks you
+have the latest upstream code and have submitted something.
+Please check
+\url{https://laforge.cs.ucla.edu/cs111/grades/}
+to see your status.
+You're expected to properly merge in upstream code without rebasing.
+Note that the website only updates your lab modification status
+if you've merged the latest code.
 
 \end{document}

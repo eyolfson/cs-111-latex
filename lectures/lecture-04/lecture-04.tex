@@ -2,7 +2,7 @@
 
 \lecturenumber{4}
 \title{Processes}
-\version{3.0.0}
+\version{3.0.1}
 \author{Jon Eyolfson}
 \date{October 5, 2021}
 
@@ -358,7 +358,9 @@
   \begin{frame}
     \frametitle{The Parent Process is Responsible for Its Child}
 
-    The operating sets the exit status when a process terminates (by calling exit)
+    The operating system sets the exit status when a process terminates
+    
+    (the process terminates by calling \texttt{exit})
 
     \hspace{2em} It can't remove its PCB yet
 
@@ -426,9 +428,11 @@
 
     \vspace{2em}
 
-    The operating can interrupt the parent process to tell it to acknowledge the child
+    The operating system can interrupt the parent process to acknowledge the child
 
-    \hspace{2em} This is a basic form of IPC called a signal (which may be ignored)
+    \hspace{2em} It is just a suggestion and the parent is free to ignore it
+
+    \hspace{4em} This is a basic form of IPC called a signal
 
     \vspace{4em}
 

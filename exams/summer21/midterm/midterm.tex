@@ -1,0 +1,415 @@
+\documentclass[12pt]{article}
+
+\usepackage{changepage}
+\usepackage{enumitem}
+\usepackage{fontspec}
+\usepackage[letterpaper,margin=72pt]{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{titling}
+\usepackage{xcolor}
+
+\setsansfont{Overpass}[Scale=MatchLowercase]
+\setmonofont{Overpass Mono}[Scale=MatchLowercase]
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\newenvironment{answer}{\begin{adjustwidth}{1cm}{}\itshape}{\end{adjustwidth}}
+
+\lstset{
+  basicstyle=\ttfamily,
+}
+
+\input{../../../colors}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=uclablue,
+}
+
+\setlist{nosep}
+
+\parindent=0pt
+
+\title{Midterm Exam Summer '21}
+\author{Jon Eyolfson}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\begin{tikzpicture}[remember picture,overlay]
+  \node (title) at (current page.center)
+        {\Large \bfseries \color{uclablue} \thetitle};
+  \node [yshift=1em] at (title.north)
+        {\large \color{uclablue} CS 111: Operating System Principles};
+  \node [yshift=-1em] at (title.south) {\normalsize Instructor: \theauthor};
+\end{tikzpicture}
+
+\newpage
+
+\pagenumbering{arabic}
+
+\textbf{Overview.}
+
+\vspace{1em}
+
+``All problems in computer science can be solved by another level of
+indirection.''
+
+\vspace{1em}
+
+Describe one operating system abstraction of your choice, and what specifically
+it abstracts.
+
+\vspace{1em}
+
+\begin{answer}
+  Virtual memory is one of the key operating system abstractions. It abstracts
+  physical memory. Instead of having to partition physical memory to individual
+  processes and hoping they only access memory that they should, we make each
+  process believe it has access to all of physical memory.
+\end{answer}
+
+\newpage
+
+\textbf{Interfaces.}
+
+\vspace{1em}
+
+You wrote a kernel module in Lab 0, which must have run in kernel mode. You also
+accessed it in user mode (in your terminal) by using \texttt{cat /proc/count}.
+What is the interface between the two CPU modes? Describe how
+\texttt{cat /proc/count} works using this interface, and be specific about the
+calls.
+
+\vspace{1em}
+
+(Hint: you do not need to describe how your kernel module works).
+
+\vspace{1em}
+
+\begin{answer}
+  The system call interface is the interface between the two CPU modes.
+  The user process will use the \texttt{open} system call to open the ``virtual
+  file'' \texttt{/proc/count} and the kernel knows this isn't a regular file.
+  The user process then calls the \texttt{read} system call, after it
+  transitions to kernel mode it reads the bytes printed by the Lab 0 kernel
+  module.
+\end{answer}
+
+\newpage
+
+\textbf{Libraries.}
+
+\vspace{1em}
+
+Assume you're writing a library you intend for lots of people to use it (and
+they will, because you know good library principles!). Would you deploy your
+library as a static or dynamic library? Describe the benefits of your choice
+over the other.
+
+\vspace{1em}
+
+As your library evolves, describe what you'd have to do to ensure a pain-free
+experience for your users. Also, describe what would users would have to do to
+use your new version of the library.
+
+\vspace{1em}
+
+\begin{answer}
+  I would deploy the library as a dynamic library. The benefit is that everyone
+  that uses the library can recieve updates without having to recompile.
+  The operating system can also load one copy of the library and share it
+  between many running applications.
+
+  To ensure a pain-free experience I would never change the API or ABI. I would
+  only add new functions, and never change any existing API or ABI. If I had
+  to change something major, I would create a new major revision. Users don't
+  have to do anything to use the new version of the library, they just need
+  to get the library update.
+\end{answer}
+
+\newpage
+
+\textbf{Processes.}
+
+\vspace{1em}
+
+Processes virtualize both CPU and memory, and saves state in a process control
+block (PCB). For both resources please describe what the PCB would need to store
+to allow context switching, and why. Please use a separate paragraph for each
+resource.
+
+\vspace{1em}
+
+\begin{answer}
+  For the CPU, the PCB would have to store it's registers (basically it's
+  state). It would just need to save and restore the registers when it context
+  switches.
+
+  For virtual memory, each process would have it's own page tables. For a
+  context switch we would just need to save a pointer to the root page table
+  (the highest level page table). To switch processes, we just need to swap this
+  pointer (which is actually just a register).
+\end{answer}
+
+\newpage
+
+\textbf{Basic IPC.}
+
+\vspace{1em}
+
+You're running a program in your terminal. You type the command and hit enter.
+Jon wrote the program you're running, so you're 100\% certain it's executing in
+an infinite loop. You press Ctrl+C, and the process ends, giving you back
+control of your terminal. Describe how the process was able to exit, even though
+it was in an infinite loop. Be as specific as possible.
+
+\vspace{1em}
+
+\begin{answer}
+  When you press Ctrl+C the shell sends a \texttt{SIGINT} signal to Jon's
+  process. The kernel then switched Jon's process to run it's signal handler.
+  The signal handler than called exit, and the process terminated. (This is
+  the default behavior, Jon was lazy and didn't write his own signal handler).
+\end{answer}
+
+\newpage
+
+\textbf{Basic Scheduling.}
+
+\vspace{1em}
+
+Between FCFS, SRTF, and RR, which scheduling algorithm(s) do NOT suffer from
+starvation. Explain how the algorithm(s) avoid this problem.
+
+\vspace{1em}
+
+\begin{answer}
+  FCFS and RR do not suffer from starvation. FCFS does not suffer from
+  stravation because there's no ``line jumping'', you sit in queue until it's
+  your turn. You can't be constantly sent back in the queue. The argument
+  is the same for RR, but instead of waiting for processes to finish, we only
+  have to wait for one time slice for every process ahead of us.
+\end{answer}
+
+\newpage
+
+\textbf{Advanced Scheduling.}
+
+\vspace{1em}
+
+Assume you have a critical user process on your Linux system that must run
+before any other process, what would you do to ensure it gets scheduled before
+other processes?
+
+\vspace{1em}
+
+(Hint: you can't modify your kernel).
+
+\vspace{1em}
+
+\begin{answer}
+  We would change it to a real-time process. We could also give it the highest
+  priority possible (100, but you don't need to state the number). Since it's
+  a real-time task, it'll get scheduled before any normal processes. It's also
+  the highest priority, so it would only compete with other high priority
+  real-time processes.
+\end{answer}
+
+\newpage
+
+\textbf{Page Replacement.}
+
+\vspace{1em}
+
+Using FIFO page replacement has several drawbacks, including suffering from
+Bélády’s anomaly. Why might you still choose to use FIFO page replacement?
+
+\vspace{1em}
+
+\begin{answer}
+  It's the easiest to implement, and fastest running algorithm. If we don't
+  expect to swap many pages anyways, the algorithm doesn't matter as much.
+  It's simply just a queue, which is easy to implement and understand.
+\end{answer}
+
+\newpage
+
+\textbf{Process API.}
+
+\vspace{1em}
+
+Consider the following code:
+
+\begin{lstlisting}
+#include <unistd.h>
+
+int main() {
+  pid_t pid = fork();
+  if (pid > 0) {
+    sleep(10);
+    // (1)
+    sleep(10);
+  }
+  return 0;
+}
+\end{lstlisting}
+
+Assume we execute this program, and it gets assigned PID 100. When PID 100
+forks, it creates a child with PID 101.
+
+\vspace{1em}
+
+\textbf{Question 1.}
+
+\vspace{1em}
+
+What did we forget to do in the parent?
+
+\vspace{1em}
+
+(Hint: the answer isn't error checking, assume that I checked for errors. The
+code is like that to be more readable).
+
+\vspace{1em}
+
+\begin{answer}
+  We forgot to call \texttt{wait}, we're a bad parent. We did not acknowledge
+  our child.
+\end{answer}
+
+\vspace{1em}
+
+\textbf{Question 2.}
+
+\vspace{1em}
+
+At point (1), what is the state of our child process? Why is it in this state?
+
+\vspace{1em}
+
+\begin{answer}
+  It's a zombie process. It's in that state because it exited (it doesn't
+  \texttt{sleep} at all), and the parent never calls \texttt{wait}.
+\end{answer}
+
+\vspace{1em}
+
+\textbf{Question 3.}
+
+\vspace{1em}
+
+After PID 100 exits, what happens to PID 101? Explain.
+
+\vspace{1em}
+
+\begin{answer}
+  As PID 100 exits, PID 101 is still a zombie, as before. When PID 100
+  terminates then PID 101 also becomes an orphan. It's re-parented, likely
+  to \texttt{init}, and the new parent calls \texttt{wait}. The kernel can now
+  remove PID 101's resources.
+\end{answer}
+
+\newpage
+
+\textbf{Page Tables.}
+
+\vspace{1em}
+
+Consider a system with 8192 byte pages, a page table entry (PTE) size of 8
+bytes, 40-bit virtual addresses, and 56-bit physical addresses.
+
+\vspace{1em}
+
+\textbf{Question 1.}
+
+\vspace{1em}
+
+How many offset bits are there in the virtual address? \textit{13}.
+
+\vspace{1em}
+
+\textbf{Question 2.}
+
+\vspace{1em}
+
+How many bits of the virtual address are left over for index bits? \textit{27}.
+
+\vspace{1em}
+
+\textbf{Question 3.}
+
+\vspace{1em}
+
+For a single page table (not a multi-level page table), how large would the
+table have to be (in bytes, KiB, MiB, or GiB)? Explain how you arrived at that
+size.
+
+\vspace{1em}
+
+\begin{answer}
+  1 GiB. Our page table would have $\mathsf{2^{27}}$ entries, each are 8 bytes
+  (or $\mathsf{2^3}$ bytes), therefore it would be $\mathsf{2^{30}}$ bytes in
+  total.
+\end{answer}
+
+\vspace{1em}
+
+\textbf{Question 4.}
+
+\vspace{1em}
+
+Considering the size you calculated in the last question, is it realistic to use
+a single page table in the real world? Explain why or why not.
+
+\vspace{1em}
+
+\begin{answer}
+  Absolutely not. If we have 16 GiB of RAM on a machine, we could only run 15
+  processes at most. The 15 processes would have to share the last 1 GiB between
+  themselves (and the kernel).
+\end{answer}
+
+\vspace{1em}
+
+\textbf{Question 5.}
+
+\vspace{1em}
+
+How many PTEs could fit on a single page?
+
+\vspace{1em}
+
+\begin{answer}
+  1024, or $\mathsf{2^{10}}$.
+\end{answer}
+
+\vspace{1em}
+
+\textbf{Question 6.}
+
+\vspace{1em}
+
+How many levels of page tables would you need, if you ensure that each (smaller)
+page table fits on a page. \textit{3}.
+
+\vspace{1em}
+
+\textbf{Question 7.}
+
+\vspace{1em}
+
+Explain how you arrived at your answer for the previous question.
+
+\vspace{1em}
+
+\begin{answer}
+  For each smaller page table, we have 10 index bits. In total we need to index
+  27 bits (40 - 13). Therefore we need $\mathsf{\lceil \frac{27}{10} \rceil}$
+  levels.
+\end{answer}
+
+\end{document}

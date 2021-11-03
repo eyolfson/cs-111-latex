@@ -2,10 +2,10 @@
 
 \labnumber{3}
 \title{Hash Hash Hash}
-\version{2.0.0}
+\version{3.0.0}
 \author{Jon Eyolfson}
-\date{August 2, 2021}
-\duedate{August 13, 2021 at 11:59 PM PST}
+\date{November 3, 2021}
+\duedate{November 17, 2021 at 11:59 PM PST}
 
 \begin{document}
 
@@ -38,7 +38,7 @@ You will have to add the proper \texttt{\#include} yourself.
 
 Run the following command to get the skeleton for Lab 3:
 \texttt{git pull upstream main}.
-You should be able to run \texttt{make} in the \texttt{lab-03} directory to
+You should be able to run \texttt{make} in the \texttt{lab3} directory to
 create a \texttt{hash-table-tester} executable, and then \texttt{make clean}
 to remove all binary files.
 The executable takes two command link arguments: \texttt{-t} changes the number
@@ -49,7 +49,7 @@ For example you can run: \texttt{./hash-table-tester -t 8 -s 50000}.
 \paragraph{Files to modify.}
 
 You should only be modifying \texttt{hash-table-v1.c}, \texttt{hash-table-v2.c},
-and \texttt{README.md} in the \texttt{lab-03} directory.
+and \texttt{README.md} in the \texttt{lab3} directory.
 
 \paragraph{Tester Code.}
 
@@ -138,13 +138,39 @@ Hash table v2: 396,051 usec
   - 24 missing
 \end{lstlisting}
 
+\paragraph{Testing.}
+
+There are a set of basic test cases given to you (they'll be released a few
+days after the lab).
+We'll withhold more advanced tests which we'll use for grading.
+Part of programming is coming up with tests yourself.
+To run the provided test cases please run the following command in your lab
+directory:
+
+\begin{lstlisting}[xleftmargin=2em]
+python -m unittest
+\end{lstlisting}
+
 \paragraph{Submission.}
 
 Simply push your code using \lstinline|git push origin main| (or simply
-\lstinline|git push|).
+\lstinline|git push|) to submit it.
+\textit{You need to create your own commits to push, you can use as many
+as you'd like.}
+You'll need to use the \texttt{git add} and \texttt{git commit} commands.
+You may push as many commits as you want, your latest commit that modifies
+the lab files counts as your submission.
 For late days we will look at the timestamp on our server.
-We will never use your commit times as proof of submission, only when you
-push your code to the course Git server.
-Remember, you must make your own commits!
+We will never use your commit times (or file access times) as proof of
+submission, only when you push your code to the course Git server.
+
+We've created a new system for the fall quarter that double checks you
+have the latest upstream code and have submitted something.
+Please check
+\url{https://laforge.cs.ucla.edu/cs111/grades/}
+to see your status.
+You're expected to properly merge in upstream code without rebasing.
+Note that the website only updates your lab modification status
+if you've merged the latest code.
 
 \end{document}

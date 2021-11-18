@@ -2,10 +2,10 @@
 
 \labnumber{4}
 \title{Hey! I'm Filing Here}
-\version{2.0.0}
+\version{3.0.0}
 \author{Jon Eyolfson}
-\date{August 16, 2021}
-\duedate{August 27, 2021 at 11:59 PM PST}
+\date{November 17, 2021}
+\duedate{December 3, 2021 at 11:59 PM PST}
 
 \begin{document}
 
@@ -42,7 +42,7 @@ You should read and understand the macros.
 
 Run the following command to get the skeleton for Lab 4:
 \texttt{git pull upstream main}.
-You should be able to run \texttt{make} in the \texttt{lab-04} directory to
+You should be able to run \texttt{make} in the \texttt{lab4} directory to
 create a \texttt{ext2-create} executable, and then \texttt{make clean}
 to remove all binary files.
 When you run the executable it creates \texttt{cs111-base.img} as described
@@ -57,7 +57,7 @@ In addition to the course materials, you'll find extra resources
 
 \paragraph{Files to modify.}
 
-You'll be writing the following functions in \texttt{lab-04/ext2-create.c}:
+You'll be writing the following functions in \texttt{lab4/ext2-create.c}:
 
 \begin{lstlisting}
 write_superblock
@@ -69,7 +69,7 @@ write_root_dir_block
 write_hello_world_file_block
 \end{lstlisting}
 
-Finally, like always, you should modify \texttt{README.md} in \texttt{lab-04}.
+Finally, like always, you should modify \texttt{README.md} in \texttt{lab4}.
 
 \paragraph{Your task.}
 
@@ -139,14 +139,40 @@ You can find example output of both \lstinline|dumpe2fs| and
 If you think it may be easier to read the binary of your filesystem, or
 you're interested, you can use \lstinline|hexdump -C cs111-base.img|.
 
+\paragraph{Testing.}
+
+There are a set of basic test cases given to you (they'll be released a few
+days after the lab).
+We'll withhold more advanced tests which we'll use for grading.
+Part of programming is coming up with tests yourself.
+To run the provided test cases please run the following command in your lab
+directory:
+
+\begin{lstlisting}[xleftmargin=2em]
+python -m unittest
+\end{lstlisting}
+
 \paragraph{Submission.}
 
 Simply push your code using \lstinline|git push origin main| (or simply
-\lstinline|git push|).
-You need to make your own commits (as many as you'd like).
+\lstinline|git push|) to submit it.
+\textit{You need to create your own commits to push, you can use as many
+as you'd like.}
+You'll need to use the \texttt{git add} and \texttt{git commit} commands.
+You may push as many commits as you want, your latest commit that modifies
+the lab files counts as your submission.
 For late days we will look at the timestamp on our server.
-We will never use your commit times as proof of submission, only when you
-push your code to the course Git server.
+We will never use your commit times (or file access times) as proof of
+submission, only when you push your code to the course Git server.
+
+We've created a new system for the fall quarter that double checks you
+have the latest upstream code and have submitted something.
+Please check
+\url{https://laforge.cs.ucla.edu/cs111/grades/}
+to see your status.
+You're expected to properly merge in upstream code without rebasing.
+Note that the website only updates your lab modification status
+if you've merged the latest code.
 
 \newpage
 

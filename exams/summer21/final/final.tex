@@ -377,7 +377,7 @@ Explain why this optimization only works for names less than or equal to 60 byte
 \begin{answer}
   The name was small enough that we could store it in the space reserved for
   pointers to blocks. For Lab 4, we had 15 addresses (12 direct, 1 indirect, 1
-  double-indirect, and 3 triple-indirect) and each were 4 bytes (60 bytes
+  double-indirect, and 1 triple-indirect) and each were 4 bytes (60 bytes
   total). We couldn't use more bytes because all the other inode fields are
   used.
 \end{answer}

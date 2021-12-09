@@ -14,8 +14,8 @@
 \usepackage{xcolor}
 
 \newbool{solutions}
-%\booltrue{solutions}
-\boolfalse{solutions}
+\booltrue{solutions}
+% \boolfalse{solutions}
 
 \usetikzlibrary{
   arrows,
@@ -344,39 +344,108 @@ and none return from \texttt{sleep} yet.
 How many threads are there \textit{in total} and what are they executing in the
 code?
 
-\vspace{3em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  There are 5 threads in total. There's 4 in \texttt{sleep} and the original
+  main thread is in \texttt{accept}.
+
+  \vspace{1em}
+}{
+  \vspace{3em}
+}
 
 \textbf{2b.} (10 points)
 Now, all threads return from \texttt{sleep} and complete.
 What gets sent back over the socket, and why?
 
+\ifbool{solutions}{
+  \vspace{1em}
+
+  Because the file descriptor representing the socket connection gets
+  \texttt{dup2}'ed in the child process to stdout before \texttt{exec}'ing
+  \texttt{ls} will send it's output over the socket.
+  So, each client will receieve the output of \texttt{ls} on this server
+  machine.
+}{
+  \vspace{3em}
+}
+
 \newpage
 
-\ 
+\ifbool{solutions}{
+}{
+  \
 
-\vspace{7em}
+  \vspace{7em}
+}
 
 \textbf{2c.} (3 points)
 How many processes did we create (excluding the original running process)?
 
-\vspace{3em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We creted 4 processes (this question was mostly a hint that you'd also have
+  an original thread in 2a).
+
+  \vspace{1em}
+}{
+  \vspace{3em}
+}
 
 \textbf{2d.} (10 points)
 What did we forget to do with the newly created porcesses?
 Why is this especially an issue in this case where our server runs for a very
 long time and may end up serving thousands of requests?
 
-\vspace{16em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We didn't call \texttt{wait} on them and created a bunch of zombie processes.
+  Since the server is a long running processes, these zombie processes will not
+  also become orphans and get reparented.
+  All the zombie processes will stick around and waste resources.
+  Eventually, given enough requessts, we'll run out of resources and be unable
+  to create new processes.
+
+  \vspace{1em}
+}{
+  \vspace{16em}
+}
 
 \textbf{2e.} (5 points)
 What would happen if we did not \texttt{fork} and instead always executed
 \texttt{dup2} followed by \texttt{execlp} directly after the \texttt{sleep} in
 every thread?
 
-\vspace{11em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  The first thread that reaches \texttt{exec} would transform the current
+  running process (the server) into \texttt{ls}.
+  \texttt{ls} would still send it's output over the socket to the client, but
+  afterwards no other client would get a response (because the server process
+  no longer exists).
+
+  \vspace{1em}
+}{
+  \vspace{11em}
+}
 
 \textbf{2f.} (10 points)
 What would be the issue if we removed \texttt{pthread\_detach}?
+
+\ifbool{solutions}{
+  \vspace{1em}
+
+  If we removed \texttt{pthread\_detach}, similar to creating processes, we
+  would create zombie threads.
+  These zombie threads would waste resources, and eventually we'll have the
+  same issue as in 2d, we'll be unable to create new threads (at minimum,
+  we may also run out of memory).
+}{
+}
 
 \newpage
 
@@ -433,13 +502,39 @@ Again, assume no errors occur.
 Does this code have any data races? Come up with an example of a data race if
 it does, or justify why it does not.
 
+\ifbool{solutions}{
+  \vspace{1em}
+
+  No, it does not have any data races.
+  All accesses to an accounts \texttt{amount} are protected by using their
+  single mutex.
+  This includes reading and writing to their \texttt{amount} to either add or
+  subtract funds from their account.
+
+  \vspace{1em}
+}{
+}
+
 \newpage
 
 \textbf{3b.} (5 points)
 Does this code have any deadlocks? Come up with an example of a deadlock if
 it does, or justify why it does not.
 
-\vspace{20em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  Yes, the code can deadlock.
+  Assume A transfers to B and B transfers to A (any amount).
+  One thread (A -> B) could acquire A's lock, then it gets context switched out
+  and the other thread (B -> A) acquires B's lock.
+  There's now a circular wait and the program deadlocks when it tries to
+  acquire the other lock in \texttt{deduct}.
+
+  \vspace{1em}
+}{
+  \vspace{20em}
+}
 
 \textbf{3c.} (10 points)
 Given the issue(s) you found in 3a and 3b, explain how you would fix the code
@@ -451,6 +546,31 @@ Also, \texttt{deduct} must safely decrement the account only if it won't have
 an negative amount, otherwise it must be 0.
 \texttt{deduct} always returns the amount deducted.
 You may write replacement functions, or explain yourself clearly.
+
+%\ifbool{solutions}{
+  \vspace{1em}
+
+  We can keep \texttt{deduct} the same, it has no data races if just
+  \texttt{deduct} gets called from multiple threads.
+  We can simpily eliminate ``hold and wait'' by doing the \texttt{deduct}
+  call independently from adding the funds to the other account.
+  A valid solution would be:
+
+  \begin{lstlisting}
+void transfer(struct account* from, struct account* to, int amount) {
+  if (from == to) return;
+  amount = deduct(from, amount);
+  pthread_mutex_lock(&to->mutex);
+  to->amount += amount;
+  pthread_mutex_unlock(&to->mutex);
+}
+  \end{lstlisting}
+
+  This is safe, because we're only adding funds to the other account.
+  There's no data races, and anything that occurs simultaneously isn't in a
+  defined order.
+%}{
+%}
 
 \newpage
 
@@ -468,45 +588,87 @@ is greater than 0).
 Assume no errors occur, so you never need to check return values.
 Consider the following code:
 
-\begin{lstlisting}
+%\ifbool{solutions}{
+  \begin{lstlisting}
 /* Global variables */ sem_t sem1; sem_t sem2; sem_t sem3;
 
 void initialize() {
-  sem_init(&sem1, 0, _);
-  sem_init(&sem2, 0, _);
-  sem_init(&sem3, 0, _);
+  sem_init(&sem1, 0, 0);
+  sem_init(&sem2, 0, 0);
+  sem_init(&sem3, 0, 0);
 }
 void* thread1(void*) {
   f1();
-
-
+  sem_post(&sem1);
+  sem_post(&sem1);
   f2();
-
+  sem_post(&sem2);
 
 }
 void* thread2(void*) {
-
+  sem_wait(&sem1);
 
   f3(); /* only runs after f1 completes */
-
+  sem_post(&sem3);
 
 }
 void* thread3(void*) {
-
+  sem_wait(&sem1);
 
   f4() /* only runs after f1 completes */;
-
+  sem_post(&sem3);
 
 }
 void* thread4(void*) {
-
+  sem_wait(&sem2);
 
   f5(); /* only runs after f2 completes */
-
-
+  sem_wait(&sem3);
+  sem_wait(&sem3);
   f6(); /* only runs after f3 and f4 complete */
 }
-\end{lstlisting}
+  \end{lstlisting}
+%}{
+%   \begin{lstlisting}
+% /* Global variables */ sem_t sem1; sem_t sem2; sem_t sem3;
+% 
+% void initialize() {
+%   sem_init(&sem1, 0, _);
+%   sem_init(&sem2, 0, _);
+%   sem_init(&sem3, 0, _);
+% }
+% void* thread1(void*) {
+%   f1();
+% 
+% 
+%   f2();
+% 
+% 
+% }
+% void* thread2(void*) {
+% 
+% 
+%   f3(); /* only runs after f1 completes */
+% 
+% 
+% }
+% void* thread3(void*) {
+% 
+% 
+%   f4() /* only runs after f1 completes */;
+% 
+% 
+% }
+% void* thread4(void*) {
+% 
+% 
+%   f5(); /* only runs after f2 completes */
+% 
+% 
+%   f6(); /* only runs after f3 and f4 complete */
+% }
+%   \end{lstlisting}
+%}
 
 \newpage
 
@@ -525,27 +687,51 @@ Write ``none'' if it can only run by itself.
 
 \vspace{1em}
 
-\texttt{f1}:
+\ifbool{solutions}{
+  \texttt{f1}: none
 
-\vspace{3em}
+  \vspace{3em}
 
-\texttt{f2}:
+  \texttt{f2}: \texttt{f3}, \texttt{f4}
 
-\vspace{3em}
+  \vspace{3em}
 
-\texttt{f3}:
+  \texttt{f3}: \texttt{f2}, \texttt{f4}, \texttt{f5}
 
-\vspace{3em}
+  \vspace{3em}
 
-\texttt{f4}:
+  \texttt{f4}: \texttt{f2}, \texttt{f3}, \texttt{f5}
 
-\vspace{3em}
+  \vspace{3em}
 
-\texttt{f5}:
+  \texttt{f5}: \texttt{f3}, \texttt{f4}
 
-\vspace{3em}
+  \vspace{3em}
 
-\texttt{f6}:
+  \texttt{f6}: none
+}{
+  \texttt{f1}:
+
+  \vspace{3em}
+
+  \texttt{f2}:
+
+  \vspace{3em}
+
+  \texttt{f3}:
+
+  \vspace{3em}
+
+  \texttt{f4}:
+
+  \vspace{3em}
+
+  \texttt{f5}:
+
+  \vspace{3em}
+
+  \texttt{f6}:
+}
 
 \newpage
 
@@ -564,12 +750,36 @@ How big of a memory block does your buddy allocator need at minimum to be able
 to handle every allocation?
 Justify your answer.
 
-\vspace{16em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  Your memory block needs to be at least 128 bytes. 
+  Since the buddy allocator only allocates blocks in powers of 2, each 10 byte
+  allocation is going to get a 16 byte block.
+  Therefore, we need 8 16 byte blocks, or 128 bytes.
+
+  \vspace{1em}
+}{
+  \vspace{16em}
+}
 
 \textbf{5b.} (5 points)
 How many bytes are lost due to fragmentation and what type of fragmentation is
 this?
 Justify your answer.
+
+\ifbool{solutions}{
+  \vspace{1em}
+
+  For each allocation there's 6 bytes lost to internal fragmentation.  
+  Since we have 8 allocations, there's a total of 48 bytes lost to internal
+  fragmentation.
+  If we used a single 128 byte block for our buddy allocator, there would no
+  external fragmentation.
+
+  \vspace{1em}
+}{
+}
 
 \newpage
 
@@ -587,20 +797,58 @@ You buy yourself 8 hard drives that are 4 TB each.
 What RAID configuration would you use if you really really care about your data?
 Justify your answer.
 
-\vspace{11em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  If we really really care about our data, we would use RAID 1.
+  RAID 1 mirrors every single disk so they're exact copies of each other.
+  As long as we have one disk working, we'll have all our data.
+  However, we'd only have 4 TB available as usable storage and wouldn't have
+  improved write performance. Read performance however, would be better.
+
+  \vspace{1em}
+}{
+  \vspace{11em}
+}
 
 \textbf{6b.} (3 points)
 What RAID configuration would you use if you care about your data but want more
 than 4 TB of total capacity?
 Justify your answer.
 
-\vspace{16em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We would likely either pick RAID 5 or 6, depending on how many disks we'd
+  like to tolerate losing at once.
+  With RAID 5 we could tolerate a single failure, and RAID 6 we could tolerate
+  two failures.
+  For RAID 5 we'd have 28 TB of usable space, and for RAID 6 we'd have 24 TB
+  of usable space.
+  The performance of RAID 5 would be slightly better than RAID 6.
+  Those are the major tradeoffs, both are good choices.
+
+  \vspace{1em}
+}{
+  \vspace{16em}
+}
 
 \textbf{6c.} (5 points)
 What RAID configuration would you use if you only care about performance?
 Justify your answer.
 Also state how much faster your read and write performance would be compared to
 a single disk.
+
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We'd use RAID 0, and as a benefit we'd get to use all 32 TB of storage as
+  well.
+  Since we're dividing all the data among all 8 disks without any parity or
+  backup, we'd get 8 times the read and write performance compared to a single
+  disk.
+}{
+}
 
 \newpage
 
@@ -633,11 +881,40 @@ inode   size   name
 Explain what happens on the filesystem when you run the \texttt{ln} command.
 Start your explaination with the new directory entry for \texttt{ln-file.txt}.
 
-\vspace{16em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  Within the current directory, we'd make a new entry for \texttt{ln-file.txt}
+  and it would simply be assigned the same inode as \texttt{my-file.txt}.
+  On the inode itself we would increment the link count by one (not needed
+  for this question).
+  The blocks themselves would be unchanged.
+
+  \vspace{1em}
+}{
+  \vspace{16em}
+}
 
 \textbf{7b.} (5 points)
 Explain what happens on the filesystem when you run the \texttt{cp} command.
 Start your explaination with the new directory entry for \texttt{cp-file.txt}.
+
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We would create a new entry for \texttt{cp-file.txt} in the current directory
+  and create a new inode (it would previously be free).
+  We'd then copy all the blocks in \texttt{my-file.txt} to free blocks in the
+  filesystem.
+  In the \texttt{cp-file.txt} inode we'd point to these newly copied blocks
+  instead.
+  You could also argue that we could also use a copy-on-write strategy to
+  avoid copying the blocks until we absolutely need to.
+  However, we'd still have a new inode.
+
+  \vspace{1em}
+}{
+}
 
 \newpage
 
@@ -659,11 +936,40 @@ idea (assume containers do not exist).
 How would your organize your applications into virtual machines?
 Explain how many virtual machines you would make and what would go on them.
 
-\vspace{21em}
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We would just make a virtual machine for each application.
+  So, we'd have one for a web server, one for a database, and one for streaming
+  video.
+  In the beginning we could still run all of these virtual machines on a single
+  machine if it's not overloaded.
+  Now that we have an overloaded machine, we could just move the virtual machine
+  that's consuming the most resources to the new server.
+  (This question is about how you would organize the virtual machines to
+  applications).
+
+  \vspace{1em}
+}{
+  \vspace{21em}
+}
 
 \textbf{8b.} (5 points)
-What would be the benefits of using your virtual machines in the event your
+What would be the benefits of using your virtual machines in the event
 one of the two servers is now overloaded?
+
+\ifbool{solutions}{
+  \vspace{1em}
+
+  We could again, just move the virtual machine that's overloaded to the new
+  server.
+  We could even do a live migration and transfer the virtual machine while
+  it's running so there's no interruption whatsoever.
+  Neat!
+
+  \vspace{1em}
+}{
+}
 
 \afterpage{\null\newpage}
 
